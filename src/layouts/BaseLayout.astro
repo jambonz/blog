@@ -47,12 +47,18 @@ const { title, description } = Astro.props;
     <slot />
     <script is:inline>
       document.getElementById('theme-toggle').addEventListener('click', function() {
-        const isDark = document.documentElement.dataset.theme === 'dark';
-        if (isDark) {
-          delete document.documentElement.dataset.theme;
+        const html = document.documentElement;
+        const currentTheme = html.getAttribute('data-theme');
+        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Determine if we're currently showing dark
+        const showingDark = currentTheme === 'dark' || (currentTheme !== 'light' && systemDark);
+
+        if (showingDark) {
+          html.setAttribute('data-theme', 'light');
           localStorage.setItem('theme', 'light');
         } else {
-          document.documentElement.dataset.theme = 'dark';
+          html.setAttribute('data-theme', 'dark');
           localStorage.setItem('theme', 'dark');
         }
       });
@@ -103,6 +109,16 @@ const { title, description } = Astro.props;
     --color-link: #58a6ff;
   }
 
+  /* Explicit light mode override (for dark system preference users) */
+  :root[data-theme="light"] {
+    --color-bg: #ffffff;
+    --color-text: #1a1a1a;
+    --color-text-muted: #666666;
+    --color-border: #e5e5e5;
+    --color-code-bg: #f6f8fa;
+    --color-link: #0969da;
+  }
+
   *,
   *::before,
   *::after {
@@ -150,16 +166,21 @@ const { title, description } = Astro.props;
     border-color: var(--color-text-muted);
   }
 
-  /* Show sun in dark mode, moon in light mode */
+  /* Icon visibility: show moon in light mode, sun in dark mode */
   #theme-toggle .sun { display: none; }
   #theme-toggle .moon { display: block; }
 
-  :root[data-theme="dark"] #theme-toggle .sun { display: block; }
+  :root[data-theme="dark"] #theme-toggle .sun,
   :root[data-theme="dark"] #theme-toggle .moon { display: none; }
+  :root[data-theme="dark"] #theme-toggle .sun { display: block; }
+
+  :root[data-theme="light"] #theme-toggle .sun,
+  :root[data-theme="light"] #theme-toggle .moon { display: none; }
+  :root[data-theme="light"] #theme-toggle .moon { display: block; }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) #theme-toggle .sun { display: block; }
-    :root:not([data-theme="light"]) #theme-toggle .moon { display: none; }
+    :root:not([data-theme]) #theme-toggle .sun { display: block; }
+    :root:not([data-theme]) #theme-toggle .moon { display: none; }
   }
 
   /* Shiki dual theme switching */
@@ -170,8 +191,8 @@ const { title, description } = Astro.props;
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) .astro-code,
-    :root:not([data-theme="light"]) .astro-code span {
+    :root:not([data-theme]) .astro-code,
+    :root:not([data-theme]) .astro-code span {
       color: var(--shiki-dark) !important;
       background-color: var(--shiki-dark-bg) !important;
     }
@@ -181,5 +202,11 @@ const { title, description } = Astro.props;
   :root[data-theme="dark"] .astro-code span {
     color: var(--shiki-dark) !important;
     background-color: var(--shiki-dark-bg) !important;
+  }
+
+  :root[data-theme="light"] .astro-code,
+  :root[data-theme="light"] .astro-code span {
+    color: var(--shiki-light) !important;
+    background-color: var(--shiki-light-bg) !important;
   }
 </style>
