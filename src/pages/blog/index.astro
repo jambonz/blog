@@ -1,0 +1,92 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+---
+
+<BaseLayout title="Blog">
+  <main class="index">
+    <h1>Blog</h1>
+    <ul class="posts">
+      {posts.map((post) => {
+        const formattedDate = post.data.date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
+        return (
+          <li>
+            <a href={`/blog/${post.id}/`}>
+              <span class="title">{post.data.title}</span>
+              <time datetime={post.data.date.toISOString()}>{formattedDate}</time>
+            </a>
+            {post.data.description && <p class="description">{post.data.description}</p>}
+          </li>
+        );
+      })}
+    </ul>
+  </main>
+</BaseLayout>
+
+<style>
+  .index {
+    max-width: var(--measure);
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0 0 var(--space-xl);
+  }
+
+  .posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .posts li {
+    padding: var(--space-md) 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .posts li:first-child {
+    padding-top: 0;
+  }
+
+  .posts a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-md);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .posts a:hover .title {
+    color: var(--color-link);
+  }
+
+  .title {
+    font-weight: 500;
+    transition: color 0.15s;
+  }
+
+  time {
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    white-space: nowrap;
+  }
+
+  .description {
+    margin: var(--space-xs) 0 0;
+    color: var(--color-text-muted);
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+</style>
