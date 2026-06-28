@@ -70,6 +70,7 @@ The folder name is the slug and becomes the URL: `/blog/<slug>/`.
 
 - `date` is date-only and rendered in **UTC**, so it shows exactly as authored
   regardless of the builder's timezone.
-- Posts with `draft: true` are excluded from both the listing and the build
-  routes — use it for works in progress.
-- Files/folders starting with `_` are ignored by the loader (handy for scratch).
+- Posts with `draft: true` are hidden from the live production site but still
+  render in local and Vercel preview builds, so authors can review them.
+- Files and folders whose name starts with `_` are ignored by the loader
+  (handy for scratch / work in progress).

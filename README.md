@@ -19,4 +19,5 @@ npm run preview  # serve the production build locally
   proxies `/blog/*` to it. See **[DEPLOY.md](DEPLOY.md)**.
 - Posts are markdown in `src/content/blog/`. To add one — or port a post from
   the old Hashnode blog — see **[MIGRATION.md](MIGRATION.md)**.
+- Writing posts via the GitHub web UI (for non-developers): **[WRITING.md](WRITING.md)**.
 - Architecture and content-schema details: **[AGENTS.md](AGENTS.md)**.

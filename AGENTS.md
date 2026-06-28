@@ -63,12 +63,15 @@ author: "Dave Horton"        # optional, defaults to "jambonz"
 tags: ["llm", "voice-ai"]    # optional
 coverImage: "./cover.jpg"    # optional, co-located image (optimized) or remote URL
 canonicalUrl: "https://..."  # optional; OMIT for migrated posts (self-canonical)
-draft: false                 # optional; true hides from listing AND build
----
+draft: false                 # optional; true hides from the live PRODUCTION site
+---                          #   but still renders in local + Vercel preview builds
 ```
 
-Posts are accessed via `getCollection('blog')` (filter `!data.draft`) and
-rendered at `/blog/<slug>/`.
+Posts are accessed via `getPosts()` (`src/utils/posts.ts`), which sorts newest
+first and drops drafts only when `VERCEL_ENV === 'production'` — so authors can
+preview unpublished posts on Vercel preview deployments. Rendered at
+`/blog/<slug>/`. The `WRITING.md` guide documents the GitHub-web authoring flow
+for non-developer content editors.
 
 ## Theming
 
