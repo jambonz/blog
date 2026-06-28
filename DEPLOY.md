@@ -9,25 +9,27 @@ wire it into the main site later with a one-line change.
 ## How the `/blog` path works
 
 Astro prefixes every in-page URL with `/blog` (e.g. `href="/blog/my-post/"`,
-`src="/blog/_astro/img.webp"`), but still writes the **files** to the dist
-*root*:
+`src="/blog/_astro/img.webp"`), and `outDir: './dist/blog'` (astro.config.mjs)
+makes it write the **files** physically under that path:
 
 ```
-dist/index.html            dist/my-post/index.html       dist/_astro/img.webp
+dist/blog/index.html     dist/blog/my-post/index.html     dist/blog/_astro/img.webp
 ```
 
-`vercel.json` bridges that gap on the deployment:
+Vercel serves `dist/` as the web root, so those files are served at `/blog/...`
+with its standard static handling — correct trailing-slash and directory-index
+behavior, no custom path rewrite to get wrong. `vercel.json` only points Vercel
+at the right output dir and redirects the bare domain root to `/blog/`:
 
 ```jsonc
 {
-  "redirects": [{ "source": "/", "destination": "/blog/", "permanent": false }],
-  "rewrites":  [{ "source": "/blog/:path*", "destination": "/:path*" }]
+  "outputDirectory": "dist",
+  "redirects": [{ "source": "/", "destination": "/blog/", "permanent": false }]
 }
 ```
 
-- The **rewrite** serves any `/blog/...` request from the matching root file, so
-  the deployment is fully navigable at `<deploy>/blog/`.
-- The **redirect** sends the bare domain root to `/blog/`.
+The deployment is fully navigable at `<deploy>/blog/`. `npm run dev` and
+`npm run preview` serve the same `/blog/` paths locally.
 
 ## Phase 1 — Deploy standalone (now)
 
