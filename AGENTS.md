@@ -20,13 +20,64 @@ Manage the background server with `astro dev stop`, `astro dev status`, and `ast
 
 ## Architecture
 
-This is an Astro 7 site using the basics starter template. Key directories:
+This is an Astro 7 static site — the jambonz blog, served at **jambonz.org/blog**.
+It deploys as its own Vercel project and is proxied under the main domain by an
+`mt-website` rewrite. See `DEPLOY.md` for the topology and `MIGRATION.md` for
+porting posts from Hashnode.
 
-- `src/pages/` - File-based routing (`.astro` files become routes)
-- `src/layouts/` - Page wrapper components
-- `src/components/` - Reusable Astro components
-- `src/assets/` - Images and assets processed by Astro
-- `public/` - Static files served as-is
+Key points:
+
+- `base: '/blog'` in `astro.config.mjs` — every internal link must be built via
+  `src/utils/url.ts` (`url('my-post')` -> `/blog/my-post/`), because Astro does
+  not auto-prefix hand-written hrefs. `site` is `https://jambonz.org`.
+- `src/pages/` - File-based routing. `index.astro` is the post listing (served
+  at `/blog/`); `[slug].astro` renders a post (`/blog/<slug>/`). There is **no**
+  `src/pages/blog/` subfolder — `base` already supplies the `/blog` segment.
+- `src/layouts/` - `BaseLayout.astro` (head, theme toggle, brand nav, canonical
+  + OpenGraph) and `PostLayout.astro` (post header, cover, tags, prose).
+- `src/content/` - Blog content collection.
+- `public/` - Static files (note: referenced as `/blog/...` since `base` applies).
+
+## Content Collections
+
+Each post is a **folder** so its images co-locate with its markdown:
+
+```
+src/content/blog/<slug>/
+  index.md      # folder name is the slug -> /blog/<slug>/
+  cover.jpg     # referenced relatively as ./cover.jpg
+```
+
+Flat `src/content/blog/<slug>.md` files also work (no co-located images).
+Files/folders beginning with `_` are ignored by the loader.
+
+Schema (`src/content.config.ts`):
+
+```yaml
+---
+title: "Post Title"          # required
+date: 2024-01-15             # required, coerced to UTC Date, rendered in UTC
+updatedDate: 2024-02-01      # optional
+description: "..."           # optional, used in <meta> + listing
+author: "Dave Horton"        # optional, defaults to "jambonz"
+tags: ["llm", "voice-ai"]    # optional
+coverImage: "./cover.jpg"    # optional, co-located image (optimized) or remote URL
+canonicalUrl: "https://..."  # optional; OMIT for migrated posts (self-canonical)
+draft: false                 # optional; true hides from listing AND build
+---
+```
+
+Posts are accessed via `getCollection('blog')` (filter `!data.draft`) and
+rendered at `/blog/<slug>/`.
+
+## Theming
+
+The site supports light/dark mode via `data-theme` attribute on `<html>`:
+- System preference respected by default
+- Manual toggle stores preference in `localStorage`
+- Code blocks use Shiki dual themes (`github-light`/`github-dark`) configured in `astro.config.mjs`
+
+CSS custom properties for colors are defined in `BaseLayout.astro` and respond to both `prefers-color-scheme` media query and `data-theme` attribute.
 
 ## Astro Component Structure
 
@@ -34,17 +85,8 @@ Astro components (`.astro` files) have two parts:
 1. **Frontmatter** (between `---` fences) - Server-side JavaScript for imports and data
 2. **Template** - HTML-like markup with `<style>` and `<script>` tags
 
-Styles in `<style>` tags are scoped to the component by default.
+Styles in `<style>` tags are scoped to the component by default. Use `:global()` for styles that need to affect rendered markdown content.
 
 ## Documentation
 
 Full documentation: https://docs.astro.build
-
-Consult these guides before working on related tasks:
-
-- [Routing and pages](https://docs.astro.build/en/guides/routing/)
-- [Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Framework components (React, Vue, Svelte)](https://docs.astro.build/en/guides/framework-components/)
-- [Content collections](https://docs.astro.build/en/guides/content-collections/)
-- [Styling and Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Internationalization](https://docs.astro.build/en/guides/internationalization/)

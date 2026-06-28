@@ -1,27 +1,56 @@
 ---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
 
 interface Props {
   title: string;
   date: Date;
+  updatedDate?: Date;
   description?: string;
+  author?: string;
+  tags?: string[];
+  coverImage?: ImageMetadata;
+  canonicalUrl?: string;
 }
 
-const { title, date, description } = Astro.props;
+const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl } =
+  Astro.props;
 
-const formattedDate = date.toLocaleDateString('en-US', {
-  year: 'numeric',
-  month: 'long',
-  day: 'numeric',
-});
+// Dates in frontmatter are date-only; coerced to UTC midnight. Format in UTC so
+// they don't drift a day backward for readers/builders behind UTC.
+const fmt = (d: Date) =>
+  d.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout
+  title={title}
+  description={description}
+  canonical={canonicalUrl}
+  ogImage={coverImage?.src}
+>
   <article class="post">
     <header>
       <h1>{title}</h1>
-      <time datetime={date.toISOString()}>{formattedDate}</time>
+      <p class="meta">
+        {author && <span class="author">{author}</span>}
+        <time datetime={date.toISOString()}>{fmt(date)}</time>
+        {updatedDate && <span class="updated">(updated {fmt(updatedDate)})</span>}
+      </p>
+      {tags.length > 0 && (
+        <ul class="tags">
+          {tags.map((tag) => <li>{tag}</li>)}
+        </ul>
+      )}
     </header>
+    {coverImage && (
+      <Image class="cover" src={coverImage} alt={title} widths={[480, 800, 1200]} sizes="(max-width: 70ch) 100vw, 70ch" loading="eager" />
+    )}
     <div class="prose">
       <slot />
     </div>
@@ -35,7 +64,7 @@ const formattedDate = date.toLocaleDateString('en-US', {
   }
 
   header {
-    margin-bottom: var(--space-xl);
+    margin-bottom: var(--space-lg);
   }
 
   h1 {
@@ -46,9 +75,51 @@ const formattedDate = date.toLocaleDateString('en-US', {
     letter-spacing: -0.02em;
   }
 
-  time {
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    align-items: baseline;
     color: var(--color-text-muted);
     font-size: 0.875rem;
+    margin: 0;
+  }
+
+  .meta .author {
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .meta .author::after {
+    content: '·';
+    margin-left: var(--space-sm);
+    color: var(--color-text-muted);
+    font-weight: 400;
+  }
+
+  .tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    list-style: none;
+    padding: 0;
+    margin: var(--space-md) 0 0;
+  }
+
+  .tags li {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+    padding: 0.1rem 0.6rem;
+  }
+
+  .cover {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: var(--space-xl);
+    border: 1px solid var(--color-border);
   }
 
   .prose :global(h2) {
@@ -64,6 +135,21 @@ const formattedDate = date.toLocaleDateString('en-US', {
     font-weight: 600;
     line-height: 1.4;
     margin: var(--space-lg) 0 var(--space-md);
+  }
+
+  .prose :global(h4) {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: var(--space-lg) 0 var(--space-sm);
+  }
+
+  .prose :global(h5) {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin: var(--space-lg) 0 var(--space-sm);
+    color: var(--color-text-muted);
   }
 
   .prose :global(p) {

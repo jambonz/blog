@@ -1,10 +1,20 @@
 ---
+import { url } from '../utils/url';
+
 interface Props {
   title: string;
   description?: string;
+  /** Override the self-referential canonical (e.g. original cross-post URL). */
+  canonical?: string;
+  /** Absolute or site-relative image URL for social cards. */
+  ogImage?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, canonical, ogImage } = Astro.props;
+
+// Self-referential canonical by default. Astro.site is set, so new URL() resolves
+// to an absolute https://jambonz.org/blog/... URL.
+const canonicalURL = canonical ?? new URL(Astro.url.pathname, Astro.site).href;
 ---
 
 <!doctype html>
@@ -14,8 +24,18 @@ const { title, description } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {description && <meta name="description" content={description} />}
+    <link rel="canonical" href={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
     <title>{title}</title>
+
+    <!-- Open Graph / Twitter -->
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={title} />
+    {description && <meta property="og:description" content={description} />}
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:site_name" content="jambonz" />
+    {ogImage && <meta property="og:image" content={new URL(ogImage, Astro.site).href} />}
+    <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
     <script is:inline>
       (function() {
         const saved = localStorage.getItem('theme');
@@ -27,6 +47,10 @@ const { title, description } = Astro.props;
   </head>
   <body>
     <header class="site-header">
+      <nav class="brand">
+        <a href={url('/')} class="brand-link">jambonz blog</a>
+        <a href="https://jambonz.org" class="home-link">jambonz.org &rarr;</a>
+      </nav>
       <button id="theme-toggle" type="button" aria-label="Toggle dark mode">
         <svg class="sun" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="5"></circle>
@@ -141,12 +165,39 @@ const { title, description } = Astro.props;
     min-height: 100vh;
   }
 
-  /* Site header with theme toggle */
+  /* Site header with brand + theme toggle */
   .site-header {
     max-width: var(--measure);
     margin: 0 auto var(--space-lg);
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-md);
+    min-width: 0;
+  }
+
+  .brand-link {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    color: var(--color-text);
+  }
+
+  .home-link {
+    font-size: 0.875rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .home-link:hover {
+    color: var(--color-link);
   }
 
   #theme-toggle {

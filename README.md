@@ -1,46 +1,22 @@
-# Astro Starter Kit: Basics
+# jambonz blog
+
+The [jambonz](https://jambonz.org) blog — a static [Astro](https://astro.build)
+site served at **jambonz.org/blog**.
+
+## Develop
 
 ```sh
-npm create astro@latest -- --template basics
+npm install
+npm run dev      # http://localhost:4321/blog/
+npm run build    # static output to ./dist/
+npm run preview  # serve the production build locally
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## How it's wired
 
-## 🚀 Project Structure
-
-Inside of your Astro project, you'll see the following folders and files:
-
-```text
-/
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
-└── package.json
-```
-
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
-
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- Built to run under the `/blog` path (`base: '/blog'` in `astro.config.mjs`).
+- Deploys as its own Vercel project; the main site (`jambonz/mt-website`)
+  proxies `/blog/*` to it. See **[DEPLOY.md](DEPLOY.md)**.
+- Posts are markdown in `src/content/blog/`. To add one — or port a post from
+  the old Hashnode blog — see **[MIGRATION.md](MIGRATION.md)**.
+- Architecture and content-schema details: **[AGENTS.md](AGENTS.md)**.
