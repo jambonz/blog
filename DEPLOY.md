@@ -36,7 +36,7 @@ The deployment is fully navigable at `<deploy>/blog/`. `npm run dev` and
 1. New Vercel project pointed at this repo. Framework preset: **Astro**
    (zero-config, static — no adapter). Build `astro build`, output `dist/`.
 2. Vercel reads `vercel.json` automatically. Your site is live and fully
-   working at `https://<project>.vercel.app/blog/` (and `/` redirects there).
+   working at `https://jambonz-blog.vercel.app/blog/` (and `/` redirects there).
 
 Develop locally with `npm run dev` (→ http://localhost:4321/blog/); `npm run
 build && npm run preview` mirrors production. Iterate, add posts, share the
@@ -47,15 +47,15 @@ Vercel URL for review — all without touching jambonz.org.
 Because the standalone deploy already serves under `/blog`, integration is a
 plain pass-through proxy — no path rewriting to reason about.
 
-**a. Add a rewrite to `mt-website/next.config.ts`** (replace the host with your
-Phase 1 URL), alongside the existing `redirects()`:
+**a. Add a rewrite to `mt-website/next.config.ts`** (the blog's production
+domain is `jambonz-blog.vercel.app`), alongside the existing `redirects()`:
 
 ```ts
 module.exports = {
   async rewrites() {
     return [
-      { source: '/blog', destination: 'https://<project>.vercel.app/blog' },
-      { source: '/blog/:path*', destination: 'https://<project>.vercel.app/blog/:path*' },
+      { source: '/blog', destination: 'https://jambonz-blog.vercel.app/blog' },
+      { source: '/blog/:path*', destination: 'https://jambonz-blog.vercel.app/blog/:path*' },
     ];
   },
   async redirects() {
