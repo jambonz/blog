@@ -1,6 +1,6 @@
 # Getting Started with the Jambonz Python SDK
 
-![Python code on a computer screen](image1.png)
+!\[Python code on a computer screen](image1.jpg)
 
 The AI developer community runs on Python. Most of the people building voice AI agents today are coming from that world, so asking them to context-switch into Node.js just to get a call working felt like unnecessary friction. That's why we built a Python SDK.
 
@@ -36,19 +36,19 @@ Webhooks are the right transport for menu-driven flows. Here is a basic IVR that
 
 ```python
 from aiohttp import web
-from jambonz_sdk.webhook import WebhookResponse
+from jambonz\_sdk.webhook import WebhookResponse
 
-async def handle_incoming(request: web.Request) -> web.Response:
+async def handle\_incoming(request: web.Request) -> web.Response:
     jambonz = WebhookResponse()
     jambonz.say(text="Welcome to the IVR.").gather(
-        input=["speech", "digits"],
+        input=\["speech", "digits"],
         actionHook="/handle-input",
         say={"text": "Press 1 for sales or 2 for support."},
         timeout=5,
     )
-    return web.json_response(jambonz.to_json())
+    return web.json\_response(jambonz.to\_json())
 
-async def handle_input(request: web.Request) -> web.Response:
+async def handle\_input(request: web.Request) -> web.Response:
     body = await request.json()
     digits = body.get("digits", "")
     jambonz = WebhookResponse()
@@ -59,12 +59,12 @@ async def handle_input(request: web.Request) -> web.Response:
     else:
         jambonz.say(text="Invalid option.")
     jambonz.hangup()
-    return web.json_response(jambonz.to_json())
+    return web.json\_response(jambonz.to\_json())
 
 app = web.Application()
-app.router.add_post("/incoming", handle_incoming)
-app.router.add_post("/handle-input", handle_input)
-web.run_app(app, port=8000)
+app.router.add\_post("/incoming", handle\_incoming)
+app.router.add\_post("/handle-input", handle\_input)
+web.run\_app(app, port=8000)
 ```
 
 When you configure the webhook in Jambonz, make sure the path matches your router. If your handler is at `/incoming`, that is what goes in the portal. To test locally, expose your server with ngrok and point Jambonz at the public URL.
@@ -75,31 +75,31 @@ For a real AI conversation, switch to WebSocket transport. This enables bidirect
 
 ```python
 import asyncio
-from jambonz_sdk.websocket import create_endpoint
+from jambonz\_sdk.websocket import create\_endpoint
 
 async def main():
-    make_service, runner = await create_endpoint(port=3000)
-    svc = make_service(path="/")
+    make\_service, runner = await create\_endpoint(port=3000)
+    svc = make\_service(path="/")
 
-    async def handle_session(session):
-        async def on_gather_result(evt):
+    async def handle\_session(session):
+        async def on\_gather\_result(evt):
             transcript = (
                 evt.get("speech", {})
-                .get("alternatives", [{}])[0]
+                .get("alternatives", \[{}])\[0]
                 .get("transcript", "")
             )
             session.say(text=f"You said: {transcript}").hangup()
             await session.reply()
 
-        session.on("/gather-result", on_gather_result)
+        session.on("/gather-result", on\_gather\_result)
         session.say(text="Hello. Say something.").gather(
-            input=["speech"],
+            input=\["speech"],
             actionHook="/gather-result",
             timeout=10,
         )
         await session.send()
 
-    svc.on("session:new", handle_session)
+    svc.on("session:new", handle\_session)
     await asyncio.Future()
 
 asyncio.run(main())
@@ -114,3 +114,4 @@ Full WebSocket reference is in the docs.
 The SDK supports the full Jambonz verb set, including outbound calls via the REST client, mid-call control, audio streaming, LLM tool calls, and agent updates mid-conversation.
 
 If you want to see the IVR demo running end to end, watch the full tutorial here. To go straight to the reference, start here. To get involved with the community, head here.
+
