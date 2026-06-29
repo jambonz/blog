@@ -1,6 +1,6 @@
 # Getting Started with the Jambonz Python SDK
 
-!\[Python code on a computer screen](image1.jpg)
+!\[Python code on a computer screen](Jambonz-Python-SDK.jpeg)
 
 The AI developer community runs on Python. Most of the people building voice AI agents today are coming from that world, so asking them to context-switch into Node.js just to get a call working felt like unnecessary friction. That's why we built a Python SDK.
 
