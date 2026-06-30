@@ -33,6 +33,12 @@ const fmt = (d: Date) =>
   description={description}
   canonical={canonicalUrl}
   ogImage={coverImage?.src}
+  article={{
+    publishedTime: date.toISOString(),
+    modifiedTime: updatedDate?.toISOString(),
+    author,
+    tags,
+  }}
 >
   <article class="post">
     <header>
