@@ -114,7 +114,7 @@ asyncio.run(main())
 
 Use `session.send()` for the initial verb array in response to `session:new`. For everything after that, use `session.reply()`.
 
-Full WebSocket reference is in the docs.
+Full WebSocket reference is in the docs https://docs.jambonz.org/reference/websocket-api/call-control/overview.
 
 ## What Else Can You Build With the Jambonz Python SDK?
 
