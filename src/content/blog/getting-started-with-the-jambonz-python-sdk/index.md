@@ -1,5 +1,5 @@
 ---
-title: "Getting Started with the Jambonz Python SDK"
+title: "Getting Started with the jambonz Python SDK"
 date: "2026-06-29"
 description: "The AI dev community runs on Python — so we built a Python SDK for jambonz. A tour of the verbs, plus a webhook IVR and a WebSocket voice AI agent."
 author: "Kevin Jombe"
@@ -9,37 +9,37 @@ draft: true
 
 ![Python code on a computer screen](./Jambonz-Python-SDK.jpeg)
 
-The AI developer community runs on Python. Most of the people building voice AI agents today are coming from that world, so asking them to context-switch into Node.js just to get a call working felt like unnecessary friction. That's why we built a Python SDK.
+The AI developer community runs on Python. Most of the people building voice AI agents today are coming from that world, so asking them to context-switch into Node.js just to get a call working felt like unnecessary friction. That's why we built a [Python SDK](https://docs.jambonz.org/sdks/python-sdk).
 
-Here's what it looks like to use it. For the full reference, check out our docs.
+Here's what it looks like to use it. For the full reference, [check out our docs](https://docs.jambonz.org/sdks/python-sdk).
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/WJvEBv0-4o4?si=d__WbN-CBmWeUZ_q" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-## How the Jambonz Python SDK Structures Call Flows
+## How the jambonz Python SDK Structures Call Flows
 
-Before diving into the code, it helps to understand how Jambonz thinks about calls.
+Before diving into the code, it helps to understand how jambonz thinks about calls.
 
-Jambonz structures calls as a list of steps. You define what happens in order: speak something, listen for a response, route based on what you hear, and hang up. The code you write is the call that happens.
+[jambonz](https://www.jambonz.org/) structures calls as a list of steps. You define what happens in order: speak something, listen for a response, route based on what you hear, and hang up. The code you write is the call that happens.
 
-For simple menus and routing, you run over webhooks. For a conversation with an AI agent, you switch to a WebSocket. It's the same SDK and verbs, but a different transport.
+For simple menus and routing, you run over webhooks. For a conversation with an AI agent, you switch to a [WebSocket](https://docs.jambonz.org/reference/websocket-api/call-control/overview). It's the same SDK and verbs, but a different transport.
 
-## The Jambonz Python SDK Verbs You Need
+## The jambonz Python SDK Verbs You Need
 
-The verb set is the same whether you are using Python or Node.js. These are the ones you will reach for most often:
+The verb set is the same whether you are using Python or [Node.js](https://docs.jambonz.org/nodeclientws). These are the ones you will reach for most often:
 
-1. `say` — speaks text to the caller.
-2. `play` — plays an audio file.
-3. `gather` — listens for speech or DTMF input.
-4. `dial` — bridges the call to another number.
-5. `agent` — builds a voice agent with STT, TTS, and an LLM.
-6. `redirect` — sends the call to another voice application.
-7. `hangup` — ends the call.
+1. [`say`](https://docs.jambonz.org/verbs/verbs/say) — speaks text to the caller.
+2. [`play`](https://docs.jambonz.org/verbs/verbs/play) — plays an audio file.
+3. [`gather`](https://docs.jambonz.org/verbs/verbs/gather) — listens for speech or DTMF input.
+4. [`dial`](https://docs.jambonz.org/verbs/verbs/dial) — bridges the call to another number.
+5. [`agent`](https://docs.jambonz.org/verbs/verbs/agent) — builds a voice agent with STT, TTS, and an LLM.
+6. [`redirect`](https://docs.jambonz.org/verbs/verbs/redirect) — sends the call to another voice application.
+7. [`hangup`](https://docs.jambonz.org/verbs/verbs/hangup) — ends the call.
 
-Everything is typed with Pydantic. Get a field wrong, and it tells you immediately, rather than after the call drops. Full verb reference is in the docs.
+Everything is typed with [Pydantic](https://pydantic.dev/opensource). Get a field wrong, and it tells you immediately, rather than after the call drops. [Full verb reference is in the docs](https://docs.jambonz.org/verbs/verbs/overview).
 
-## How to Build a Python IVR With the Jambonz Webhook Transport
+## How to Build a Python IVR With the jambonz Webhook Transport
 
-Webhooks are the right transport for menu-driven flows. Here is a basic IVR that greets the caller, listens for input, and routes accordingly.
+[Webhooks](https://docs.jambonz.org/reference/rest-platform-management/applications/get-webhook) are the right transport for menu-driven flows. Here is a basic IVR that greets the caller, listens for input, and routes accordingly.
 
 ```python
 from aiohttp import web
@@ -74,11 +74,11 @@ app.router.add_post("/handle-input", handle_input)
 web.run_app(app, port=8000)
 ```
 
-When you configure the webhook in Jambonz, make sure the path matches your router. If your handler is at `/incoming`, that is what goes in the portal. To test locally, expose your server with ngrok and point Jambonz at the public URL.
+When you configure the webhook in jambonz, make sure the path matches your router. If your handler is at `/incoming`, that is what goes in the portal. To test locally, expose your server with ngrok and point jambonz at the public URL.
 
 ## How to Build a Python Voice AI Agent With WebSockets
 
-For a real AI conversation, switch to WebSocket transport. This enables bidirectional communication, event streaming, and mid-call updates.
+For a real AI conversation, switch to [WebSocket](https://docs.jambonz.org/reference/websocket-api/call-control/overview) transport. This enables bidirectional communication, event streaming, and mid-call updates.
 
 ```python
 import asyncio
@@ -114,11 +114,11 @@ asyncio.run(main())
 
 Use `session.send()` for the initial verb array in response to `session:new`. For everything after that, use `session.reply()`.
 
-Full WebSocket reference is in the docs https://docs.jambonz.org/reference/websocket-api/call-control/overview.
+[Full WebSocket reference is in the docs](https://docs.jambonz.org/reference/websocket-api/call-control/overview).
 
-## What Else Can You Build With the Jambonz Python SDK?
+## What Else Can You Build With the jambonz Python SDK?
 
-The SDK supports the full Jambonz verb set, including outbound calls via the REST client, mid-call control, audio streaming, LLM tool calls, and agent updates mid-conversation.
+The SDK supports the [full jambonz verb set](https://docs.jambonz.org/verbs/verbs/overview), including outbound calls via the [REST client](https://docs.jambonz.org/reference/introduction), mid-call control, [audio streaming](https://docs.jambonz.org/guides/features/tts-streaming), LLM tool calls, and agent updates mid-conversation.
 
-If you want to see the IVR demo running end to end, watch the full tutorial here https://www.youtube.com/watch?v=WJvEBv0-4o4.To go straight to the reference, start here  https://docs.jambonz.org/sdks/python-sdk. To get involved with the community, head here https://community.jambonz.org/.
+If you want to see the IVR demo running end to end, watch the full tutorial [here](https://www.youtube.com/watch?v=WJvEBv0-4o4). To go straight to the reference, [start here](https://docs.jambonz.org/sdks/python-sdk). To get involved with the community, [head here](https://community.jambonz.org/).
 
