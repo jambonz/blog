@@ -13,7 +13,7 @@ The AI developer community runs on Python. Most of the people building voice AI 
 
 Here's what it looks like to use it. For the full reference, check out our docs.
 
-📹 **Watch the walkthrough:** https://www.youtube.com/watch?v=WJvEBv0-4o4
+<iframe width="560" height="315" src="https://www.youtube.com/embed/WJvEBv0-4o4?si=d__WbN-CBmWeUZ_q" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## How the Jambonz Python SDK Structures Call Flows
 
