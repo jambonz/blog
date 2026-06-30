@@ -1,4 +1,11 @@
-# Getting Started with the Jambonz Python SDK
+---
+title: "Getting Started with the Jambonz Python SDK"
+date: "2026-06-29"
+description: "The AI dev community runs on Python — so we built a Python SDK for jambonz. A tour of the verbs, plus a webhook IVR and a WebSocket voice AI agent."
+author: "Kevin Jombe"
+tags: ["python", "sdk", "tutorial"]
+draft: true
+---
 
 ![Python code on a computer screen](./Jambonz-Python-SDK.jpeg)
 
@@ -113,5 +120,5 @@ Full WebSocket reference is in the docs.
 
 The SDK supports the full Jambonz verb set, including outbound calls via the REST client, mid-call control, audio streaming, LLM tool calls, and agent updates mid-conversation.
 
-If you want to see the IVR demo running end to end, watch the full tutorial here. To go straight to the reference, start here. To get involved with the community, head here.
+If you want to see the IVR demo running end to end, watch the full tutorial here https://www.youtube.com/watch?v=WJvEBv0-4o4.To go straight to the reference, start here  https://docs.jambonz.org/sdks/python-sdk. To get involved with the community, head here https://community.jambonz.org/.
 
