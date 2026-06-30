@@ -223,8 +223,12 @@ const fmt = (d: Date) =>
     border-radius: 8px;
   }
 
+  /* display:block + overflow-x lets wide tables scroll inside the content
+     column instead of widening the whole page on narrow screens. */
   .prose :global(table) {
+    display: block;
     width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     margin: var(--space-md) 0;
     font-size: 0.875rem;
