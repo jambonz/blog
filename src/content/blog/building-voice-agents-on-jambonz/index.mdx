@@ -7,6 +7,8 @@ tags: ["voice-ai", "llm", "turn-detection", "agent", "stt", "tts"]
 draft: true
 ---
 
+import CodeTabs from '../../../components/CodeTabs.astro';
+
 Most "how to build a voice agent" tutorials stop at "connect an LLM to a phone number." This is not that post. This is a tour of the machinery — every knob you can turn on a jambonz cascaded voice agent, why it exists, and how the pieces fit together into a low-latency, interruptible, tool-calling conversation.
 
 If you've read LiveKit's excellent write-up on turn detection and interruption handling, this covers the same territory for jambonz, plus the parts they leave out: the LLM layer, tool calling, MCP, and the built-in handoff-to-human tool.
@@ -20,6 +22,9 @@ Everything below is driven by a single verb: **`agent`** (available since jambon
 ## 1. The `agent` verb at a glance
 
 A jambonz application drives calls over a WebSocket using the jambonz Node SDK (`@jambonz/sdk`). To stand up a voice agent you configure one `agent` verb. Here's a minimal one, in full:
+
+<CodeTabs>
+<Fragment slot="ts">
 
 ```ts
 import http from 'http';
@@ -45,6 +50,41 @@ svc.on('session:new', (session) => {
     .send();
 });
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+import asyncio
+from jambonz_sdk.websocket import create_endpoint
+
+async def main():
+    make_service, server = await create_endpoint(port=3000)
+    svc = make_service(path="/agent")
+
+    async def handle_session(session):
+        session.agent(
+            llm={
+                "vendor": "anthropic",
+                "model": "claude-haiku-4-5-20251001",
+                "llmOptions": {
+                    "systemPrompt": "You are a friendly receptionist for Acme Plumbing. Keep replies short.",
+                    "temperature": 0.4,
+                },
+            },
+            stt={"vendor": "deepgram", "language": "en-US"},
+            tts={"vendor": "elevenlabs", "voice": "Rachel"},
+        )
+        await session.send()
+
+    svc.on("session:new", handle_session)
+    await asyncio.Future()
+
+asyncio.run(main())
+```
+
+</Fragment>
+</CodeTabs>
 
 That's a working agent. Everything else in this post is refinement — and to keep the snippets focused, the examples below show just the relevant `agent()` option rather than the whole handler. The full set of top-level properties:
 
@@ -116,6 +156,9 @@ One invariant worth stating up front, because it explains a lot of the design: *
 
 The `stt` object selects and configures the recognizer. If you omit it, the agent inherits the account/application default recognizer.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 stt: {
   vendor: 'deepgram',
@@ -126,6 +169,23 @@ stt: {
   deepgramOptions: { smartFormatting: true, endpointing: 500 },
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={
+    "vendor": "deepgram",
+    "language": "en-US",
+    "model": "nova-3",
+    "hints": ["Acme Plumbing", "boiler", "thermostat"],
+    "hintsBoost": 15,
+    "deepgramOptions": {"smartFormatting": True, "endpointing": 500},
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 ### Supported STT vendors
 
@@ -163,6 +223,9 @@ When you use one of these, the agent uses its native `endOfTurn` events and does
 
 The `tts` object selects and configures the synthesizer; omit it to inherit the application default voice.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 tts: {
   vendor: 'elevenlabs',
@@ -174,6 +237,24 @@ tts: {
   },
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+tts={
+    "vendor": "elevenlabs",
+    "language": "en-US",
+    "voice": "21m00Tcm4TlvDq8ikWAM",
+    "options": {
+        "model_id": "eleven_turbo_v2_5",
+        "voice_settings": {"stability": 0.5, "similarity_boost": 0.8, "speed": 1.05},
+    },
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 ### Supported TTS vendors
 
@@ -198,6 +279,9 @@ TTS output is cached by default, keyed on the text plus the full voice identity 
 
 The `llm` object is where you pick the model and shape its behavior:
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 llm: {
   vendor: 'openai',
@@ -212,6 +296,27 @@ llm: {
   },
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+llm={
+    "vendor": "openai",
+    "model": "gpt-4o",
+    "label": "my-openai-key",
+    "llmOptions": {
+        "systemPrompt": "You are ...",
+        "temperature": 0.5,
+        "maxTokens": 400,
+        "tools": [],            # ...
+        "initialMessages": [],  # seed the conversation
+    },
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 `vendor`, `model`, and `label` (which stored credential to use) select the model. `llmOptions` carries `systemPrompt`, `temperature`, `maxTokens`, `tools`, and optional `initialMessages`/`messages` to seed history. If you don't set `systemPrompt` but include a `system`-role message in `initialMessages`, that's used instead.
 
@@ -259,9 +364,22 @@ If your recognizer is one of the native turn-taking vendors (`deepgramflux`, `as
 
 If your recognizer doesn't do turn detection natively (Deepgram standard, Google, Azure, …), or you want to override the native behavior, you can bolt on **Krisp** — an acoustic model that listens for natural turn boundaries (intonation, pausing) independent of the transcript.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 turnDetection: { mode: 'krisp', threshold: 0.5 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+turnDetection={"mode": "krisp", "threshold": 0.5}
+```
+
+</Fragment>
+</CodeTabs>
 
 or the shorthand `turnDetection: 'krisp'`. The `threshold` (0–1, default `0.5`) trades off eagerness against patience — lower fires sooner. Krisp emits an `endOfTurn` with a probability score. If Krisp fires before the STT final transcript has arrived (it often does — acoustics beat transcription), the agent enters `AwaitingFinalTranscript` and waits up to a bounded timeout (2000 ms by default) for the words to catch up before prompting the LLM.
 
@@ -290,6 +408,9 @@ In other words: if your STT already tells the agent when speech starts, jambonz 
 
 When the caller talks over the bot, you want the bot to stop — but not for a cough, a "mm-hmm," or a burst of background noise. `bargeIn` controls this.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 bargeIn: {
   enable: true,
@@ -297,6 +418,20 @@ bargeIn: {
   strategy: 'vad',
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+bargeIn={
+    "enable": True,
+    "minSpeechDuration": 0.7,
+    "strategy": "vad",
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 - `enable` — master switch (default `true`).
 - `minSpeechDuration` — seconds of confirmed speech before a barge-in is committed (default `0.7`).
@@ -316,9 +451,22 @@ An interim transcript arriving during the window is treated as definitive proof 
 
 VAD can't tell a real interruption from a backchannel — "uh-huh," "right," "okay" — because acoustically they're all just speech. Krisp's **interrupt prediction** is an ML model that judges whether overlapping caller speech is a genuine attempt to take the floor or just active-listening noise.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 bargeIn: { strategy: 'interruptPrediction', threshold: 0.5 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+bargeIn={"strategy": "interruptPrediction", "threshold": 0.5}
+```
+
+</Fragment>
+</CodeTabs>
 
 With this strategy there's **no tentative pause and no `minSpeechDuration` debounce** — when the model says "this is a real interruption," the agent cuts over immediately. The result is a bot that stops promptly for genuine interruptions but ignores backchannels, which is exactly the behavior that makes a conversation feel natural. (Currently the interrupt-prediction vendor is Krisp; `threshold` defaults to `0.5`.) If interrupt prediction fails to start for any reason, the agent falls back to VAD barge-in automatically.
 
@@ -341,10 +489,24 @@ That's early generation. It comes in two flavors depending on your turn detector
 - **With Krisp turn detection**, it's opt-in — set `earlyGeneration: true`. Krisp emits an early signal that fires the speculative prompt before it confirms the turn has actually ended.
 - **With Deepgram Flux**, it's automatic — Flux's native `EagerEndOfTurn` event drives preflight regardless of the `earlyGeneration` flag (provided you've set an eager threshold; see the caveat below). The other native-turn-taking recognizers (AssemblyAI, Speechmatics) don't emit a preflight signal, so early generation isn't available with them.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 turnDetection: 'krisp',
 earlyGeneration: true,
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+turnDetection="krisp",
+earlyGeneration=True,
+```
+
+</Fragment>
+</CodeTabs>
 
 **How it works.** On an early/eager end-of-turn signal, the agent enters `Preflighting` and calls the LLM speculatively (`promptSpeculative`) with the interim transcript. Generated tokens are **buffered, not spoken**, and — critically — this speculative prompt **does not touch conversation history**. Then one of three things happens:
 
@@ -356,6 +518,9 @@ The agent tracks hit/miss/cancel counts so you can see how often preflight is pa
 
 **The Deepgram Flux caveat.** Flux's early generation needs an *eager* end-of-turn threshold to trigger on. You must set `stt.deepgramOptions.eagerEotThreshold` — otherwise Flux never emits `EagerEndOfTurn` events and preflight never fires. (The agent logs a warning if it sees `earlyGeneration: true` on Flux without it.)
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 stt: {
   vendor: 'deepgramflux',
@@ -363,21 +528,60 @@ stt: {
 }
 ```
 
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={
+    "vendor": "deepgramflux",
+    "deepgramOptions": {"eagerEotThreshold": 0.7},
+}
+```
+
+</Fragment>
+</CodeTabs>
+
 ---
 
 ## 10. Noise isolation
 
 Background noise hurts everything downstream — it lowers transcription confidence and confuses barge-in detection. jambonz can run **Krisp** (or **RNNoise**) noise cancellation on the audio before STT and VAD ever see it.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 noiseIsolation: 'krisp'
 ```
 
+</Fragment>
+<Fragment slot="py">
+
+```python
+noiseIsolation="krisp"
+```
+
+</Fragment>
+</CodeTabs>
+
 or, with control:
+
+<CodeTabs>
+<Fragment slot="ts">
 
 ```ts
 noiseIsolation: { mode: 'krisp', level: 100, direction: 'read' }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+noiseIsolation={"mode": "krisp", "level": 100, "direction": "read"}
+```
+
+</Fragment>
+</CodeTabs>
 
 - `mode` — `krisp` or `rnnoise`.
 - `level` — 0–100 suppression strength (default `100`).
@@ -390,6 +594,9 @@ Note this is independent of Krisp turn-taking and interrupt prediction, even tho
 ## 11. Tool calling
 
 An agent that can only talk isn't very useful. Tools let the model look up an order, book an appointment, or check availability. Define tools in `llmOptions.tools` using standard JSON-Schema function definitions:
+
+<CodeTabs>
+<Fragment slot="ts">
 
 ```ts
 llm: {
@@ -411,7 +618,36 @@ llm: {
 toolHook: '/tools',
 ```
 
+</Fragment>
+<Fragment slot="py">
+
+```python
+llm={
+    "vendor": "openai",
+    "model": "gpt-4o",
+    "llmOptions": {
+        "systemPrompt": "...",
+        "tools": [{
+            "name": "lookup_order",
+            "description": "Look up an order by its ID",
+            "parameters": {
+                "type": "object",
+                "properties": {"order_id": {"type": "string"}},
+                "required": ["order_id"],
+            },
+        }],
+    },
+},
+toolHook="/tools",
+```
+
+</Fragment>
+</CodeTabs>
+
 When the model decides to call `lookup_order`, the agent dispatches it to your **`toolHook`** and feeds the result back into the conversation so the model can continue. In the SDK you handle it on the hook path and answer with `sendToolOutput`:
+
+<CodeTabs>
+<Fragment slot="ts">
 
 ```ts
 session.on('/tools', async (evt) => {
@@ -423,11 +659,29 @@ session.on('/tools', async (evt) => {
 });
 ```
 
+</Fragment>
+<Fragment slot="py">
+
+```python
+async def on_tool(evt):
+    if evt.get("name") == "lookup_order":
+        order = await db.lookup_order(evt["arguments"]["order_id"])
+        await session.tool_output(evt.get("tool_call_id", ""), order)
+
+session.on("/tools", on_tool)
+```
+
+</Fragment>
+</CodeTabs>
+
 Under the hood the agent sends an `agent:tool-call` request with the tool name, call ID, and (already-parsed) arguments; `sendToolOutput` returns the result as an `llm:tool-output` message. There's a safety timeout (20 seconds by default) so a hung tool can't wedge the call. After the result comes back, the agent re-prompts the LLM with the tools still in scope (some providers — Anthropic in particular — require the tool definitions to stay visible across the tool-call turn). *(For common tools — weather, web search, calculator, date/time, Wikipedia — `@jambonz/tools` ships ready-made implementations you can register instead of hand-rolling this handler.)*
 
 ### Covering tool latency with a filler
 
 A three-second database lookup is an awkward silence on a phone call. `toolFiller` covers it:
+
+<CodeTabs>
+<Fragment slot="ts">
 
 ```ts
 toolFiller: {
@@ -436,6 +690,20 @@ toolFiller: {
   style: 'casual',
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+toolFiller={
+    "type": "backchannel",
+    "startDelaySecs": 2,
+    "style": "casual",
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 - `type: "audio"` loops an audio file (`url`) — think hold music or keyboard clicks.
 - `type: "backchannel"` speaks short LLM-generated phrases ("Let me pull that up…"), pre-warmed at agent startup in the TTS voice so there's no synthesis delay. `style` gives the model a tone hint ("casual", "professional and patient").
@@ -450,12 +718,28 @@ Set `toolFiller: false` to disable it entirely.
 
 Beyond locally-defined tools, the agent can connect to remote **MCP (Model Context Protocol)** servers and expose *their* tools to the model — no glue code, no redeploying your app when the toolset changes.
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 mcpServers: [
   { url: 'https://tools.example.com/mcp/sse',
     auth: { Authorization: 'Bearer TOKEN' } },
 ]
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+mcpServers=[
+    {"url": "https://tools.example.com/mcp/sse",
+     "auth": {"Authorization": "Bearer TOKEN"}},
+]
+```
+
+</Fragment>
+</CodeTabs>
 
 At agent startup, jambonz connects to each server (auto-detecting SSE vs. streamable-HTTP transport), discovers its tools, and **merges them into the same tool list** as your local tools, the handoff tool, and the hangup tool. From the model's perspective it's one flat toolset. When the model calls an MCP tool, the agent routes it to the right MCP client, applies a per-call timeout (10 s by default), and — if the connection has dropped — reconnects once and retries before giving up. Connections are cleanly torn down when the call ends.
 
@@ -471,6 +755,9 @@ Two behaviors are common enough that jambonz ships them as built-in tools you en
 
 Set a `handoff` config and the agent injects a `transfer_to_human` tool the model can call to escalate to a person:
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 handoff: {
   mode: 'warm',
@@ -478,6 +765,20 @@ handoff: {
   brief: 'auto',
 }
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+handoff={
+    "mode": "warm",
+    "target": "+15125551212",
+    "brief": "auto",
+}
+```
+
+</Fragment>
+</CodeTabs>
 
 The injected tool always takes a `reason`, and — unless `brief: "none"` — a required `summary` argument, with a description that tells the model to brief the human ("who the caller is, what they want, and anything verified or attempted"). You can rename the tool (`toolName`) and override its description (`toolDescription`).
 
@@ -524,6 +825,9 @@ Plus the session-level counters — barge-in attempts/confirmations/reverts, pre
 
 Here's a fully-specified agent that uses most of what we've covered — a low-latency configuration built around Krisp: acoustic turn-taking, interrupt prediction, early generation, noise isolation, a tool webhook, and human handoff. (Interrupt prediction and Krisp turn detection ride the same Krisp session, so they pair naturally.)
 
+<CodeTabs>
+<Fragment slot="ts">
+
 ```ts
 session
   .agent({
@@ -565,6 +869,53 @@ session
   })
   .send();
 ```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+session.agent(
+    greeting=True,
+    llm={
+        "vendor": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "llmOptions": {
+            "systemPrompt": "You are a support agent for Acme. Be concise and warm.",
+            "temperature": 0.4,
+            "maxTokens": 300,
+            "reasoningEffort": "minimal",
+            "tools": [{
+                "name": "lookup_order",
+                "description": "Look up an order by ID",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"order_id": {"type": "string"}},
+                    "required": ["order_id"],
+                },
+            }],
+        },
+    },
+    stt={"vendor": "deepgram", "language": "en-US"},
+    tts={
+        "vendor": "elevenlabs",
+        "voice": "21m00Tcm4TlvDq8ikWAM",
+        "options": {"model_id": "eleven_turbo_v2_5"},
+    },
+    turnDetection="krisp",
+    earlyGeneration=True,
+    bargeIn={"strategy": "interruptPrediction", "threshold": 0.5},
+    noiseIsolation="krisp",
+    toolHook="/tools",
+    toolFiller={"type": "backchannel", "startDelaySecs": 2},
+    handoff={"mode": "warm", "target": "+15125551212", "brief": "auto"},
+    hangup={},
+    eventHook="/agent-events",
+)
+await session.send()
+```
+
+</Fragment>
+</CodeTabs>
 
 > **Krisp requires an API key** on self-hosted jambonz — that covers turn detection, interrupt prediction, and Krisp noise isolation. RNNoise noise isolation is the key-free alternative.
 

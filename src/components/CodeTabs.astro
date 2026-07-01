@@ -1,0 +1,129 @@
+---
+/**
+ * CodeTabs — a two-tab TypeScript / Python code switcher for MDX posts.
+ *
+ * Tab switching itself is pure CSS (a hidden radio group + `:checked`
+ * sibling selectors), so it works with JavaScript disabled — each block
+ * just switches independently. A tiny hoisted script (bundled once, no
+ * matter how many CodeTabs are on the page) upgrades that to page-wide
+ * sync: pick "Python" in one block and every block follows, remembered
+ * across visits via localStorage.
+ *
+ * Usage in an .mdx file:
+ *
+ *   import CodeTabs from '../../../components/CodeTabs.astro';
+ *
+ *   <CodeTabs>
+ *     <Fragment slot="ts">
+ *
+ *     ```ts
+ *     // typescript here
+ *     ```
+ *
+ *     </Fragment>
+ *     <Fragment slot="py">
+ *
+ *     ```python
+ *     # python here
+ *     ```
+ *
+ *     </Fragment>
+ *   </CodeTabs>
+ */
+const { tsLabel = 'TypeScript', pyLabel = 'Python' } = Astro.props;
+// Unique per instance — no shared build-time state, so page renders can't race.
+const uid = 'ct-' + Math.random().toString(36).slice(2, 9);
+---
+
+<div class="code-tabs">
+  <input class="ct-radio" type="radio" name={uid} id={`${uid}-ts`} data-lang="ts" checked />
+  <label class="ct-label" for={`${uid}-ts`}>{tsLabel}</label>
+  <input class="ct-radio" type="radio" name={uid} id={`${uid}-py`} data-lang="py" />
+  <label class="ct-label" for={`${uid}-py`}>{pyLabel}</label>
+  <div class="ct-panel ct-panel-ts"><slot name="ts" /></div>
+  <div class="ct-panel ct-panel-py"><slot name="py" /></div>
+</div>
+
+<style>
+  .code-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin: var(--space-md, 1.25rem) 0;
+  }
+
+  /* Visually hidden but focusable (keyboard arrow-keys still switch tabs). */
+  .ct-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .ct-label {
+    order: 0;
+    cursor: pointer;
+    padding: 0.35rem 0.85rem;
+    margin: 0 0.4rem 0.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.2;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    transition: color 0.12s ease, border-color 0.12s ease;
+  }
+  .ct-label:hover { color: var(--color-text); }
+
+  /* Active tab (the checked radio's own label). */
+  .ct-radio:checked + .ct-label {
+    color: var(--color-link);
+    border-color: var(--color-link);
+  }
+
+  /* Keyboard focus ring on the label of a focused radio. */
+  .ct-radio:focus-visible + .ct-label {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+  }
+
+  /* Panels wrap onto their own full-width row, below the tab labels. */
+  .ct-panel {
+    order: 1;
+    width: 100%;
+    display: none;
+  }
+  /* Both radios precede both panels in the DOM, so `~` reaches them. */
+  .code-tabs > .ct-radio[data-lang="ts"]:checked ~ .ct-panel-ts { display: block; }
+  .code-tabs > .ct-radio[data-lang="py"]:checked ~ .ct-panel-py { display: block; }
+
+  /* Sit the code block flush under the tabs. */
+  .ct-panel :global(pre) { margin-top: 0; }
+</style>
+
+<script>
+  const KEY = 'jb-code-lang';
+
+  function applyLang(lang: string) {
+    document.querySelectorAll<HTMLInputElement>(
+      `.code-tabs .ct-radio[data-lang="${lang}"]`
+    ).forEach((radio) => { radio.checked = true; });
+  }
+
+  const saved = localStorage.getItem(KEY);
+  if (saved === 'ts' || saved === 'py') applyLang(saved);
+
+  document.addEventListener('change', (e) => {
+    const el = e.target;
+    if (el instanceof HTMLInputElement && el.classList.contains('ct-radio')) {
+      const lang = el.dataset.lang;
+      if (lang) {
+        localStorage.setItem(KEY, lang);
+        applyLang(lang);
+      }
+    }
+  });
+</script>
