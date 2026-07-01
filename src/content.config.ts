@@ -21,6 +21,11 @@ const blog = defineCollection({
       // Original Hashnode URL — emitted as <link rel="canonical"> to preserve SEO.
       canonicalUrl: z.string().url().optional(),
       draft: z.boolean().default(false),
+      // Optional Q&A. Rendered as a visible "FAQ" section AND emitted as
+      // FAQPage JSON-LD (visible content is required for the structured data).
+      faq: z
+        .array(z.object({ question: z.string(), answer: z.string() }))
+        .optional(),
     }),
 });
 

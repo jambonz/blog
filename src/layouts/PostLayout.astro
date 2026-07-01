@@ -12,9 +12,10 @@ interface Props {
   tags?: string[];
   coverImage?: ImageMetadata;
   canonicalUrl?: string;
+  faq?: { question: string; answer: string }[];
 }
 
-const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl } =
+const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl, faq } =
   Astro.props;
 
 // Dates in frontmatter are date-only; coerced to UTC midnight. Format in UTC so
@@ -39,6 +40,7 @@ const fmt = (d: Date) =>
     author,
     tags,
   }}
+  faq={faq}
 >
   <article class="post">
     <header>
@@ -60,6 +62,17 @@ const fmt = (d: Date) =>
     <div class="prose">
       <slot />
     </div>
+    {faq && faq.length > 0 && (
+      <section class="prose faq">
+        <h2>Frequently asked questions</h2>
+        {faq.map((item) => (
+          <div class="faq-item">
+            <h3>{item.question}</h3>
+            <p>{item.answer}</p>
+          </div>
+        ))}
+      </section>
+    )}
   </article>
 </BaseLayout>
 
