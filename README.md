@@ -20,4 +20,5 @@ npm run preview  # serve the production build local
 - Posts are markdown in `src/content/blog/`. To add one — or port a post from
   the old Hashnode blog — see **[MIGRATION.md](MIGRATION.md)**.
 - Writing posts via the GitHub web UI (for non-developers): **[WRITING.md](WRITING.md)**.
+- How SEO/metadata works (what's automatic vs. per-post): **[SEO.md](SEO.md)**.
 - Architecture and content-schema details: **[AGENTS.md](AGENTS.md)**.
