@@ -9,7 +9,7 @@ site served at **jambonz.org/blog**.
 npm install
 npm run dev      # http://localhost:4321/blog/
 npm run build    # static output to ./dist/
-npm run preview  # serve the production build locally
+npm run preview  # serve the production build local
 ```
 
 ## How it's wired
