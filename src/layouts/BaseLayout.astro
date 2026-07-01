@@ -15,9 +15,11 @@ interface Props {
     author: string;
     tags?: string[];
   };
+  /** Optional Q&A — emits FAQPage JSON-LD (rendered visibly by PostLayout). */
+  faq?: { question: string; answer: string }[];
 }
 
-const { title, description, canonical, ogImage, article } = Astro.props;
+const { title, description, canonical, ogImage, article, faq } = Astro.props;
 
 // Self-referential canonical by default. Astro.site is set, so new URL() resolves
 // to an absolute https://jambonz.org/blog/... URL.
@@ -31,6 +33,15 @@ const ogImageURL = new URL(ogImage ?? `${base}/og-default.jpg`, Astro.site).href
 
 const rssURL = `${base}/rss.xml`;
 
+// Publisher entity — a consistent jambonz identity for search engines and LLMs.
+const organization = {
+  '@type': 'Organization',
+  name: 'jambonz',
+  url: 'https://jambonz.org',
+  logo: 'https://jambonz.org/favicon/android-chrome-512x512.png',
+  sameAs: ['https://github.com/jambonz'],
+};
+
 // schema.org BlogPosting for posts — Google rich results + machine-readable facts for LLMs.
 const jsonLd = article && {
   '@context': 'https://schema.org',
@@ -40,11 +51,24 @@ const jsonLd = article && {
   datePublished: article.publishedTime,
   dateModified: article.modifiedTime ?? article.publishedTime,
   author: { '@type': 'Person', name: article.author },
-  publisher: { '@type': 'Organization', name: 'jambonz' },
+  publisher: organization,
   image: ogImageURL,
   mainEntityOfPage: canonicalURL,
   keywords: article.tags?.length ? article.tags.join(', ') : undefined,
 };
+
+// FAQPage JSON-LD when a post supplies faq entries (rendered visibly by PostLayout).
+const faqJsonLd = faq?.length
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faq.map((f) => ({
+        '@type': 'Question',
+        name: f.question,
+        acceptedAnswer: { '@type': 'Answer', text: f.answer },
+      })),
+    }
+  : null;
 ---
 
 <!doctype html>
@@ -90,6 +114,9 @@ const jsonLd = article && {
     )}
     {jsonLd && (
       <script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />
+    )}
+    {faqJsonLd && (
+      <script type="application/ld+json" is:inline set:html={JSON.stringify(faqJsonLd)} />
     )}
     <script is:inline>
       (function() {
