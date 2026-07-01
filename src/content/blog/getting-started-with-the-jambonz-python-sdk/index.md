@@ -4,7 +4,7 @@ date: "2026-06-29"
 description: "The AI dev community runs on Python — so we built a Python SDK for jambonz. A tour of the verbs, plus a webhook IVR and a WebSocket voice AI agent."
 author: "Kevin Jombe"
 tags: ["python", "sdk", "tutorial"]
-draft: true
+
 ---
 
 ![Python code on a computer screen](./Jambonz-Python-SDK.jpeg)
@@ -121,4 +121,3 @@ Use `session.send()` for the initial verb array in response to `session:new`. Fo
 The SDK supports the [full jambonz verb set](https://docs.jambonz.org/verbs/verbs/overview), including outbound calls via the [REST client](https://docs.jambonz.org/reference/introduction), mid-call control, [audio streaming](https://docs.jambonz.org/guides/features/tts-streaming), LLM tool calls, and agent updates mid-conversation.
 
 If you want to see the IVR demo running end to end, watch the full tutorial [here](https://www.youtube.com/watch?v=WJvEBv0-4o4). To go straight to the reference, [start here](https://docs.jambonz.org/sdks/python-sdk). To get involved with the community, [head here](https://community.jambonz.org/).
-
