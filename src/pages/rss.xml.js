@@ -9,11 +9,12 @@ export async function GET(context) {
     title: 'jambonz blog',
     description: 'Engineering notes and product updates from the jambonz team.',
     site: context.site,
+    trailingSlash: false,
     items: posts.map((post) => ({
       title: post.data.title,
       description: post.data.description,
       pubDate: post.data.date,
-      link: `/blog/${post.id}/`,
+      link: `/blog/${post.id}`,
     })),
   });
 }

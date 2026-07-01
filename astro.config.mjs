@@ -10,6 +10,11 @@ export default defineConfig({
   // Next.js app; an mt-website rewrite proxies /blog/* to this deployment.
   site: 'https://jambonz.org',
   base: '/blog',
+  // jambonz.org (Next.js) strips trailing slashes, and the marketing pages are
+  // slash-less, so the blog matches: no trailing slash on any URL, and pages are
+  // emitted as <slug>.html (not <slug>/index.html) so they serve at the slash-less
+  // path without a redirect. Keeps canonical/sitemap URLs identical to what serves.
+  trailingSlash: 'never',
   // Emit files physically under dist/blog/ so the Vercel deploy serves them at
   // /blog/... with standard static handling (correct trailing-slash behavior,
   // no custom rewrite needed). Vercel's web root is dist/.
