@@ -1,7 +1,7 @@
 ---
 title: "Building voice agents on jambonz: the nuts and bolts"
 date: 2026-07-01
-description: "A deep dive on the jambonz agent verb — the cascaded STT → LLM → TTS pipeline, supported vendors, turn detection (native STT and Krisp), VAD, barge-in and interrupt prediction, early generation, tool calling, MCP servers, and the built-in handoff-to-human tool."
+description: "The complete guide to the jambonz agent verb — the cascaded STT → LLM → TTS pipeline, supported vendors, the turn latency budget, turn detection (native STT and Krisp), VAD, barge-in and interrupt prediction, early generation, multilingual calls, tool calling, MCP servers, the built-in handoff-to-human tool, mid-call control, and per-turn observability."
 author: "Dave Horton"
 tags: ["voice-ai", "llm", "turn-detection", "agent", "stt", "tts"]
 draft: true
@@ -15,7 +15,7 @@ If you've read LiveKit's excellent write-up on turn detection and interruption h
 
 We're going to talk about the **cascaded** pipeline — speech-to-text → LLM → text-to-speech, with a real turn-taking state machine in the middle. (jambonz also supports speech-to-speech / realtime models like the OpenAI Realtime API, but that's a different architecture and a different post.) The cascaded pipeline is what most production agents run, because it lets you mix and match the best STT, LLM, and TTS vendors independently and gives you fine-grained control over turn-taking and barge-in.
 
-Everything below is driven by a single verb: **`agent`** (available since jambonz 10.1).
+Everything below is driven by a single verb: **`agent`** (available since jambonz 10.1). The goal of this post is to be the one reference you need: by the end you'll have seen every stage of the pipeline, every configuration knob, the reasoning behind each default, and how to tune the whole thing with real latency numbers — from an empty project to a production agent.
 
 ---
 
@@ -103,9 +103,21 @@ That's a working agent. Everything else in this post is refinement — and to ke
 | `toolFiller` | Audio or backchannel to cover tool-execution latency |
 | `mcpServers` | Remote MCP servers whose tools the agent can call |
 | `eventHook` | Webhook that receives per-turn and lifecycle events |
+| `actionHook` | Webhook invoked when the agent ends (with a completion reason) |
 | `noResponseTimeout` | Seconds of silence before re-prompting the caller (default 12) |
 | `autoLockLanguage` | Lock STT/TTS to the detected language |
+| `languageConfig` | Per-language TTS overrides used by `autoLockLanguage` |
 | `greeting` | Whether the agent speaks first (default `true`) |
+
+### What you need before you start
+
+A quick checklist, so the rest of the post can focus on the interesting parts:
+
+- **jambonz 10.1 or later** — a [jambonz.cloud](https://jambonz.cloud) account or a self-hosted deployment.
+- **A WebSocket application.** The `agent` verb requires WebSocket transport (not HTTP webhooks) — the conversation is inherently bidirectional: events stream out, tool results and mid-call updates stream in. Create an application in the portal whose calling webhook is your app's `wss://` URL, and point a phone number or SIP trunk at it.
+- **Speech and LLM credentials**, added to your account in the portal. The verb references them implicitly by `vendor` (plus an optional `label` when you have several credentials for the same vendor). You can also pass inline `auth` on the `llm` object for dynamic keys.
+- **The SDK**: `npm install @jambonz/sdk` for Node/TypeScript, or `pip install jambonz-python-sdk` for Python. Every example below is shown in both.
+- **A Krisp API key**, only if you're self-hosting *and* want the Krisp features covered below (turn detection, interrupt prediction, Krisp noise isolation). RNNoise noise isolation needs no key.
 
 We'll go through each cluster in turn.
 
@@ -141,7 +153,7 @@ Internally the `agent` verb is a **state machine**. It's worth understanding, be
 |---|---|
 | `Idle` | Waiting for the caller. May play the greeting. |
 | `UserSpeaking` | Caller is talking; transcript is accumulating. |
-| `Preflighting` | Speculatively running the LLM before the turn is confirmed (see §9). |
+| `Preflighting` | Speculatively running the LLM before the turn is confirmed (see §10). |
 | `AwaitingFinalTranscript` | Turn-end fired but the authoritative transcript hasn't arrived yet. |
 | `Thinking` | Committed to a response; LLM is generating. |
 | `AssistantSpeaking` | TTS is playing; caller can barge in. |
@@ -152,7 +164,44 @@ One invariant worth stating up front, because it explains a lot of the design: *
 
 ---
 
-## 3. Speech-to-text (STT)
+## 3. Anatomy of a turn: the latency budget
+
+Before diving into the individual components, it's worth understanding where the time goes, because every tuning decision in this post attacks one specific segment of the same timeline. Here's the anatomy of a single turn, from the moment the caller stops talking to the moment they hear the bot:
+
+```
+caller stops speaking
+  │
+  │  endpointing            silence detection inside the STT
+  │                         (Deepgram default: 500 ms)
+  ▼
+final transcript ready ──── transcriber_latency
+  │
+  │  turn_detection_latency  extra wait for the end-of-turn decision
+  │                          (zero when EOT arrives with/before the transcript)
+  ▼
+LLM prompted
+  │
+  │  model_latency           time-to-first-token from the LLM
+  ▼
+first token
+  │
+  │  voice_latency           first text sent to TTS → first audio back
+  ▼
+caller hears the bot
+```
+
+The perceived response time is the **sum** of these segments, and a good conversational target is under about a second of voice-to-voice latency. jambonz measures every segment on every turn (they're delivered to your `eventHook`, with exactly these names — see the observability section), so you're never guessing which part is slow. The levers, segment by segment:
+
+- **Endpointing + turn detection** — the biggest and most under-appreciated chunk. A silence-based endpointer *must* wait out its full silence window on every single turn; a native turn-taking model (Deepgram Flux, AssemblyAI) or Krisp's acoustic model can fire as soon as the caller *sounds* finished, often hundreds of milliseconds sooner. And because Krisp listens to local audio while the STT is network-bound, its end-of-turn routinely lands *before* the final transcript — turning `turn_detection_latency` into zero.
+- **Transcriber latency** — vendor and model choice.
+- **Model latency** — a fast model (Groq-class TTFT), `reasoningEffort: 'minimal'`, and above all **early generation**, which runs the LLM *during* the turn-detection wait. On a preflight hit, `model_latency` disappears from the turn report entirely — generation happened while the endpointer was still deciding.
+- **Voice latency** — a streaming TTS vendor, plus the TTS cache for repeated prompts.
+
+Keep this timeline in mind as you read — each section below names the segment it improves.
+
+---
+
+## 4. Speech-to-text (STT)
 
 The `stt` object selects and configures the recognizer. If you omit it, the agent inherits the account/application default recognizer.
 
@@ -219,7 +268,7 @@ When you use one of these, the agent uses its native `endOfTurn` events and does
 
 ---
 
-## 4. Text-to-speech (TTS)
+## 5. Text-to-speech (TTS)
 
 The `tts` object selects and configures the synthesizer; omit it to inherit the application default voice.
 
@@ -267,7 +316,7 @@ tts={
 
 ### Streaming and word-level alignment
 
-For low latency, jambonz streams TTS: LLM tokens flow into the synthesizer and audio flows to the caller before the full response is generated. Several vendors (ElevenLabs, Cartesia, Rimelabs, and others) also emit **word-level timing alignment**. That alignment is not cosmetic — it's what makes clean barge-in possible. When a caller interrupts, the agent asks the streaming buffer *which words were actually spoken* and rewrites the assistant's conversation-history entry to exactly that prefix (see §8). Without alignment, the model would "think" it said things the caller never heard.
+For low latency, jambonz streams TTS: LLM tokens flow into the synthesizer and audio flows to the caller before the full response is generated. Several vendors (ElevenLabs, Cartesia, Rimelabs, and others) also emit **word-level timing alignment**. That alignment is not cosmetic — it's what makes clean barge-in possible. When a caller interrupts, the agent asks the streaming buffer *which words were actually spoken* and rewrites the assistant's conversation-history entry to exactly that prefix (see §9). Without alignment, the model would "think" it said things the caller never heard.
 
 ### Caching
 
@@ -275,7 +324,7 @@ TTS output is cached by default, keyed on the text plus the full voice identity 
 
 ---
 
-## 5. The LLM (the brain)
+## 6. The LLM (the brain)
 
 The `llm` object is where you pick the model and shape its behavior:
 
@@ -348,11 +397,17 @@ Reasoning models can burn hundreds of milliseconds "thinking" before the first t
 
 ### Conversation history
 
-The agent maintains history as a simple `{role, content}` array (`user`, `assistant`, `tool`), and the vendor adapter translates it to each provider's native wire shape (Gemini uses `model` instead of `assistant`; Anthropic and Bedrock have their own tool-turn ordering rules). You mostly don't think about this — but two capabilities are exposed to you: **history summarization** (optionally condense old turns to keep context small and cheap on long calls) and mid-call **context injection** (§13).
+The agent maintains history as a simple `{role, content}` array (`user`, `assistant`, `tool`), and the vendor adapter translates it to each provider's native wire shape (Gemini uses `model` instead of `assistant`; Anthropic and Bedrock have their own tool-turn ordering rules). You mostly don't think about this — but two capabilities are exposed to you: **history summarization** (below) and mid-call **context injection** (§16).
+
+### Long calls: history summarization
+
+On a long call, unbounded history costs you twice — every turn re-sends the whole conversation (tokens and prompt-processing latency), and very long contexts make some models drift. jambonz can summarize automatically: set the `JAMBONES_AGENT_SUMMARIZE_TURNS` environment variable on the feature-server (a deployment setting, not a verb property; minimum 8 when enabled).
+
+Every N turns, the agent takes everything *older* than the most recent N turns, has the same LLM summarize it ("preserving key facts, decisions, and context needed to continue the conversation naturally" — tool payloads are skipped, since summarizing raw tool results rarely helps), and folds the summary into the system prompt as a `## Conversation context` section. The old messages are dropped; the recent N stay verbatim. Each subsequent summarization replaces the context section rather than stacking. The result: context stays bounded no matter how long the call runs, while the agent keeps the facts that matter. A `history_summarized` event fires on your `eventHook` each time it happens.
 
 ---
 
-## 6. Turn detection: knowing when the caller is done
+## 7. Turn detection: knowing when the caller is done
 
 This is the heart of a good voice agent. End the turn too early and you interrupt the caller mid-thought; end it too late and the bot feels sluggish. jambonz gives you a layered set of mechanisms, configured with `turnDetection`.
 
@@ -393,7 +448,7 @@ or the shorthand `turnDetection: 'krisp'`. The `threshold` (0–1, default `0.5`
 
 ---
 
-## 7. Voice Activity Detection (VAD)
+## 8. Voice Activity Detection (VAD)
 
 VAD answers the simplest question — "is anyone talking right now?" — and jambonz uses **Silero** for it. You rarely configure VAD directly; the agent enables it automatically only when it's actually needed:
 
@@ -404,7 +459,7 @@ In other words: if your STT already tells the agent when speech starts, jambonz 
 
 ---
 
-## 8. Interruption handling (barge-in)
+## 9. Interruption handling (barge-in)
 
 When the caller talks over the bot, you want the bot to stop — but not for a cough, a "mm-hmm," or a burst of background noise. `bargeIn` controls this.
 
@@ -472,11 +527,11 @@ With this strategy there's **no tentative pause and no `minSpeechDuration` debou
 
 ### Trimming the response on interruption
 
-When a barge-in is confirmed, the agent doesn't just stop audio — it repairs history. Using the TTS word-alignment described in §4, it grabs the text that was *actually spoken*, truncates the assistant's history entry to that prefix (with a trailing marker), clears the TTS buffer, and interrupts the in-flight LLM stream. The model's memory of the conversation now matches what the caller actually heard. It also fires a `user_interruption` event on your `eventHook`.
+When a barge-in is confirmed, the agent doesn't just stop audio — it repairs history. Using the TTS word-alignment described in §5, it grabs the text that was *actually spoken*, truncates the assistant's history entry to that prefix (with a trailing marker), clears the TTS buffer, and interrupts the in-flight LLM stream. The model's memory of the conversation now matches what the caller actually heard. It also fires a `user_interruption` event on your `eventHook`.
 
 ---
 
-## 9. Early generation (preflight)
+## 10. Early generation (preflight)
 
 This is the most interesting latency optimization in the pipeline, so it gets its own section.
 
@@ -543,7 +598,7 @@ stt={
 
 ---
 
-## 10. Noise isolation
+## 11. Noise isolation
 
 Background noise hurts everything downstream — it lowers transcription confidence and confuses barge-in detection. jambonz can run **Krisp** (or **RNNoise**) noise cancellation on the audio before STT and VAD ever see it.
 
@@ -591,7 +646,63 @@ Note this is independent of Krisp turn-taking and interrupt prediction, even tho
 
 ---
 
-## 11. Tool calling
+## 12. Keeping the conversation alive: greeting, silence, and language
+
+Three smaller behaviors round out the conversational loop. They're easy to overlook, and they're the difference between a demo and something callers actually enjoy talking to.
+
+### Who speaks first
+
+By default (`greeting: true`) the agent speaks first: at startup it prompts the LLM with a synthetic *"Begin the conversation."* turn, so the opening line comes from your system prompt — put the greeting you want there ("Answer as a receptionist for Acme Plumbing; open by asking how you can help"). Set `greeting: false` and the agent waits silently for the caller — the right choice for outbound calls where the callee says "hello?" first.
+
+### When the caller goes quiet
+
+If the agent sits in `Idle` with no caller speech for `noResponseTimeout` seconds (default 12; `0` disables), it re-engages — not with a canned recording, but by prompting the LLM with a synthetic turn:
+
+> *(The user has not responded. Briefly check if they are still there or ask if they need help.)*
+
+So the re-engagement is in the agent's own voice and persona, and aware of the conversation so far ("Are you still there? We were just about to look up your order…"). The timer resets whenever the caller speaks, and each timeout is counted in the session stats.
+
+### Multilingual callers
+
+If your callers may speak more than one language, `autoLockLanguage` plus `languageConfig` handles it. Pair it with a multilingual recognizer (this is built for Deepgram Flux multilingual):
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+stt: { vendor: 'deepgramflux', language: 'multi' },
+autoLockLanguage: 'always',
+languageConfig: {
+  'es-ES': { tts: { voice: 'a-spanish-voice-id' } },
+  'de-DE': { tts: { voice: 'a-german-voice-id' } },
+},
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={"vendor": "deepgramflux", "language": "multi"},
+autoLockLanguage="always",
+languageConfig={
+    "es-ES": {"tts": {"voice": "a-spanish-voice-id"}},
+    "de-DE": {"tts": {"voice": "a-german-voice-id"}},
+},
+```
+
+</Fragment>
+</CodeTabs>
+
+How it works: the recognizer reports the detected language in its metadata each turn, and the agent reacts in one of two modes:
+
+- **`autoLockLanguage: true`** — lock on the *first* detected language and stay there. The agent live-reconfigures the recognizer's language hints to the detected language (on vendors that support mid-stream reconfiguration), which improves accuracy for the rest of the call.
+- **`autoLockLanguage: 'always'`** — adapt on *every* turn. The recognizer's hints stay broad (so it can keep detecting switches), and whenever the language changes the agent swaps the TTS voice.
+
+The TTS swap comes from `languageConfig`: keys are BCP-47 codes, and each entry's `tts` object is merged over your base `tts` config. When the voice actually changes, the live TTS stream reconnects with the new voice mid-call — a caller who switches to Spanish gets answered in a Spanish voice on the very next turn.
+
+---
+
+## 13. Tool calling
 
 An agent that can only talk isn't very useful. Tools let the model look up an order, book an appointment, or check availability. Define tools in `llmOptions.tools` using standard JSON-Schema function definitions:
 
@@ -674,7 +785,25 @@ session.on("/tools", on_tool)
 </Fragment>
 </CodeTabs>
 
-Under the hood the agent sends an `agent:tool-call` request with the tool name, call ID, and (already-parsed) arguments; `sendToolOutput` returns the result as an `llm:tool-output` message. There's a safety timeout (20 seconds by default) so a hung tool can't wedge the call. After the result comes back, the agent re-prompts the LLM with the tools still in scope (some providers — Anthropic in particular — require the tool definitions to stay visible across the tool-call turn). *(For common tools — weather, web search, calculator, date/time, Wikipedia — `@jambonz/tools` ships ready-made implementations you can register instead of hand-rolling this handler.)*
+Under the hood the agent sends an `agent:tool-call` request with the tool name, call ID, and (already-parsed) arguments; `sendToolOutput` returns the result as an `llm:tool-output` message. There's a safety timeout (20 seconds by default) so a hung tool can't wedge the call. After the result comes back, the agent re-prompts the LLM with the tools still in scope (some providers — Anthropic in particular — require the tool definitions to stay visible across the tool-call turn).
+
+### Pre-built tools
+
+Before hand-rolling a handler, check `@jambonz/tools` (a Node package) — it ships ready-made, schema-included tools: `get_weather`, `web_search` (Tavily, needs an API key), `calculator`, `get_datetime`, and `wikipedia`. Each factory exposes a `.schema` you drop into `llmOptions.tools`, and `registerTools` wires the dispatch for you:
+
+```ts
+import { createWeather, createDateTime, registerTools } from '@jambonz/tools';
+
+const weather = createWeather();
+const datetime = createDateTime();
+
+// in the agent verb:
+//   llmOptions: { tools: [weather.schema, datetime.schema] },
+//   toolHook: '/tools',
+registerTools(session, '/tools', [weather, datetime]);
+```
+
+(Python apps hand-roll the equivalent with the dispatch handler shown above — the package is Node-only.) Local tools, pre-built tools, MCP tools, and the built-in handoff/hangup tools all coexist in the same tool list; the agent routes each call to the right executor by name.
 
 ### Covering tool latency with a filler
 
@@ -714,7 +843,7 @@ Set `toolFiller: false` to disable it entirely.
 
 ---
 
-## 12. Calling MCP servers
+## 14. Calling MCP servers
 
 Beyond locally-defined tools, the agent can connect to remote **MCP (Model Context Protocol)** servers and expose *their* tools to the model — no glue code, no redeploying your app when the toolset changes.
 
@@ -747,7 +876,7 @@ This is the clean way to give an agent access to a shared, independently-deploye
 
 ---
 
-## 13. Built-in tools: handoff and hangup
+## 15. Built-in tools: handoff and hangup
 
 Two behaviors are common enough that jambonz ships them as built-in tools you enable declaratively — you don't have to define the schema or handle them in your `toolHook`.
 
@@ -780,15 +909,26 @@ handoff={
 </Fragment>
 </CodeTabs>
 
-The injected tool always takes a `reason`, and — unless `brief: "none"` — a required `summary` argument, with a description that tells the model to brief the human ("who the caller is, what they want, and anything verified or attempted"). You can rename the tool (`toolName`) and override its description (`toolDescription`).
+The injected tool always takes a `reason`, and — unless `brief: "none"` — a required `summary` argument, with a description that tells the model to brief the human ("who the caller is, what they want, and anything verified or attempted"). You can rename the tool (`toolName`) and override its description (`toolDescription`) — useful when you want several differently-targeted transfer tools or a description tuned to your escalation policy.
 
-When the model calls it, the agent:
+The config controls the whole choreography:
 
-1. suspends itself (detaches its STT/LLM/TTS handlers and stops any in-flight generation),
-2. builds a transfer using your `handoff` config merged with the model's tool arguments, and executes it (blind or warm, to a SIP URI / phone number / queue),
-3. branches on the outcome — if the transfer **returns** (no answer, human hangs up), the agent re-attaches and resumes the conversation, firing a `transfer.returned` event; if it **bridges or ends**, the agent completes with a `transferred` reason.
+- **`mode`** — `blind` (send the caller and step away) or `warm` (the bot stays on, reaches the human first, and speaks the briefing before connecting the caller).
+- **`target`** — where to send the call: a phone number, SIP URI, registered user, or queue.
+- **`brief`** — what the human hears before the caller is connected: `'auto'` (default — the LLM writes the summary from the tool's `summary` argument), `'none'` (no spoken brief), or `{ template: '...' }` to give the LLM guidance on what the summary should cover ("always include the account number and what was already tried").
+- **`briefSynthesizer`** — optionally speak the brief in a different voice/vendor than the caller-facing one.
+- Plus the standard transfer options — `callerId`, `timeout`, `confirm`, `amd` (answering-machine detection on the human leg), and a `disposition`/`eventHook` for transfer-level events.
 
-So a caller can be handed to a human with a spoken summary, and if the human doesn't pick up, the bot seamlessly takes the call back.
+When the model calls the tool, the agent:
+
+1. **suspends itself** — detaches its STT/LLM/TTS handlers and stops any in-flight generation (the caller hears the transfer proceeding, not the bot),
+2. **runs the transfer**, merging your `handoff` config with the model's tool arguments (the `reason` and `summary` it supplied),
+3. **branches on the outcome**:
+   - **Bridged** — caller and human are connected; the agent completes with reason `transferred`.
+   - **Ended** — the transfer leg terminated the call (e.g. went to the human's voicemail and finished there); the agent completes with reason `transfer_ended`.
+   - **Returned** — the human didn't answer, or hung up and sent the caller back. The agent **re-attaches its handlers and resumes the conversation**, firing a `transfer.returned` event on your `eventHook`. Your app should react to that event — typically with a `generate_reply` (§16) so the bot acknowledges what happened ("I wasn't able to reach a specialist — let me see what else I can do") instead of resuming in silence.
+
+That last branch is the one most home-grown transfer implementations get wrong: the failure path. Here, a failed escalation lands the caller back with a bot that still has the full conversation.
 
 ### The hangup tool
 
@@ -796,32 +936,177 @@ Similarly, a `hangup` config injects a `hangup` tool so the model can end the ca
 
 ---
 
-## 14. Mid-call control
+## 16. Mid-call control
 
-An agent isn't frozen once it starts. You can steer it live (via the REST API / a WebSocket message), which the state machine applies at the next safe moment:
+An agent isn't frozen once it starts. Your application — or any external system, via the REST API — can steer it live, and the state machine applies each update at the next safe moment. Four update types:
 
-- **`update_instructions`** — hot-swap the system prompt (TTS guidance is re-appended automatically).
-- **`inject_context`** — push messages into history, e.g. "the caller just completed payment," so the model reacts without the caller having to say it.
-- **`update_tools`** — replace the tool set for the next turn.
-- **`generate_reply`** — make the agent speak now, optionally interrupting the current response — useful for event-driven prompts ("your callback is ready").
+- **`update_instructions`** — hot-swap the system prompt (TTS guidance is re-appended automatically). Use it when the conversation changes phase: "You are now a billing specialist…"
+- **`inject_context`** — append messages to the conversation history, e.g. CRM data fetched after the call started, or "the caller just completed payment on the web," so the model knows without the caller saying it.
+- **`update_tools`** — replace the tool set; takes effect on the next LLM turn.
+- **`generate_reply`** — make the agent speak *now* from a synthetic input, optionally with one-shot `instructions`. If the agent is mid-response, the request queues until the turn completes — or pass `interrupt: true` to cut the current response off and speak immediately (supervisor overrides, urgent events).
+
+From inside your app, over the session's WebSocket:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+// the conversation moved to billing — change persona and inject account data
+session.updateAgent({
+  type: 'update_instructions',
+  instructions: 'You are now a billing support agent for Acme. Help with invoice questions.',
+});
+
+session.updateAgent({
+  type: 'inject_context',
+  messages: [
+    { role: 'system', content: 'Account #12345: Gold tier, 3 open tickets, last invoice $214.' },
+  ],
+});
+
+// an external event fires — have the agent speak, interrupting if needed
+session.updateAgent({
+  type: 'generate_reply',
+  user_input: 'The customer\'s payment just went through.',
+  instructions: 'Confirm the payment cheerfully and ask if anything else is needed.',
+  interrupt: true,
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+# the conversation moved to billing — change persona and inject account data
+await session.update_agent({
+    "type": "update_instructions",
+    "instructions": "You are now a billing support agent for Acme. Help with invoice questions.",
+})
+
+await session.update_agent({
+    "type": "inject_context",
+    "messages": [
+        {"role": "system", "content": "Account #12345: Gold tier, 3 open tickets, last invoice $214."},
+    ],
+})
+
+# an external event fires — have the agent speak, interrupting if needed
+await session.update_agent({
+    "type": "generate_reply",
+    "user_input": "The customer's payment just went through.",
+    "instructions": "Confirm the payment cheerfully and ask if anything else is needed.",
+    "interrupt": True,
+})
+```
+
+</Fragment>
+</CodeTabs>
+
+The same updates work from *outside* the call, through the REST API — any backend that knows the `call_sid` can steer a live agent:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+await client.calls.updateAgent(callSid, {
+  type: 'generate_reply',
+  user_input: 'The callback the customer requested is now available.',
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+await client.calls.update_agent(call_sid, {
+    "type": "generate_reply",
+    "user_input": "The callback the customer requested is now available.",
+})
+```
+
+</Fragment>
+</CodeTabs>
+
+Between mid-call updates, MCP servers, and tool calling, the agent stops being a closed loop: it's a conversational process your whole system can talk to.
 
 ---
 
-## 15. Observability
+## 17. Observability
 
-Your `eventHook` receives real-time events throughout the conversation: `user_transcript` (recognized caller speech), `llm_response` (the assistant's reply text), `user_interruption` (a barge-in was confirmed), and `turn_end` (the end-of-turn summary). The `turn_end` payload is the one you'll build dashboards on — it carries the transcript, the response, whether the turn was interrupted, and a `latency` object with per-component timings:
+Your `eventHook` receives real-time events throughout the conversation: `user_transcript` (recognized caller speech), `llm_response` (the assistant's reply text), `user_interruption` (a barge-in was confirmed), and `turn_end` (the end-of-turn summary). The `turn_end` payload is the one you'll build dashboards on — it carries the transcript, the response (trimmed to what was actually spoken if the turn was interrupted), and a `latency` object that maps exactly onto the timeline from §3:
 
-- `stt_ms` — caller stopped talking → final transcript
-- `eot_ms` — final transcript → end-of-turn decision
-- `ttft_ms` / `llm_ms` — prompt → first LLM token (minus any tool-call time)
-- `tts_ms` — first token → first audio
-- `preflight` — hit / miss / cancel and token count, when early generation is on
+```json
+{
+  "type": "turn_end",
+  "transcript": "what's the balance on my account",
+  "response": "Your current balance is forty-two dollars and fifty cents. Anything else?",
+  "interrupted": false,
+  "latency": {
+    "transcriber_latency": 180,
+    "turn_detection_latency": 40,
+    "voice_latency": 95,
+    "preflight": { "result": "hit", "tokens": 42 }
+  }
+}
+```
 
-Plus the session-level counters — barge-in attempts/confirmations/reverts, preflight hits/misses/cancels, no-response timeouts — which are exactly the numbers you use to tune the thresholds in §6 and §8. If a barge-in is reverting too often, your `minSpeechDuration` is too low or you want interrupt prediction. If preflight misses dominate, your STT is producing unstable interims. The instrumentation tells you which knob to turn.
+- **`transcriber_latency`** — caller stopped talking → final transcript (ms)
+- **`turn_detection_latency`** — extra wait after the transcript for the end-of-turn decision; absent when EOT arrived with or before the transcript
+- **`model_latency`** — LLM time-to-first-token; **absent on a preflight hit**, as in the example above — the response was generated while turn detection was still deciding, so there was no LLM wait on the critical path. That missing field *is* the early-generation win, visible in your telemetry.
+- **`voice_latency`** — first text sent to TTS → first audio back
+- **`preflight`** — `result` (`hit` / `miss` / `pending`) and, on a hit, the buffered token count; present only when early generation is on
+
+Sum the fields and you have the turn's voice-to-voice latency (plus the STT endpointing window); trend them per segment and you know exactly which vendor or setting to revisit.
+
+Beyond per-turn metrics, the agent keeps session-level counters — barge-in attempts/confirmations/reverts, preflight hits/misses/cancels, no-response timeouts — which are exactly the numbers you use to tune the thresholds in §7 and §9. If barge-ins revert too often, your `minSpeechDuration` is too low or you want interrupt prediction. If preflight misses dominate, your STT is producing unstable interims. The instrumentation tells you which knob to turn. And since every turn is also an OpenTelemetry span, the same timings land in your tracing backend (Jaeger, Zipkin, OTLP) alongside the rest of the platform's traces.
 
 ---
 
-## 16. Putting it together
+## 18. When the agent ends
+
+The agent verb runs until something ends it, and then your application decides what happens next. The `actionHook` fires with a `completion_reason`:
+
+- **`normal`** — the conversation ran its course (or the verb was killed by new instructions).
+- **`hangup`** — the model called the built-in hangup tool.
+- **`transferred`** — the handoff tool bridged the caller to a human.
+- **`transfer_ended`** — the handoff leg ended the call (e.g. terminated in voicemail).
+
+Whatever verbs you return from the actionHook run next — a goodbye, a survey `gather`, an `enqueue` into a human queue, or a plain hangup:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+session.on('/agent-complete', (evt) => {
+  console.log(`agent ended: ${evt.completion_reason}`);
+  session
+    .say({ text: 'Thanks for calling Acme. Goodbye!' })
+    .hangup()
+    .reply();
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+async def on_complete(evt):
+    print(f"agent ended: {evt.get('completion_reason')}")
+    session.say(text="Thanks for calling Acme. Goodbye!")
+    session.hangup()
+    await session.reply()
+
+session.on("/agent-complete", on_complete)
+```
+
+</Fragment>
+</CodeTabs>
+
+And the agent composes with the rest of jambonz: it's just a verb. Play a compliance announcement with `say` before it starts, record the call, or follow it with any other call flow — the agent is one stage in the session, not the whole session.
+
+---
+
+## 19. Putting it together
 
 Here's a fully-specified agent that uses most of what we've covered — a low-latency configuration built around Krisp: acoustic turn-taking, interrupt prediction, early generation, noise isolation, a tool webhook, and human handoff. (Interrupt prediction and Krisp turn detection ride the same Krisp session, so they pair naturally.)
 
@@ -866,6 +1151,7 @@ session
     handoff: { mode: 'warm', target: '+15125551212', brief: 'auto' },
     hangup: {},
     eventHook: '/agent-events',
+    actionHook: '/agent-complete',
   })
   .send();
 ```
@@ -910,6 +1196,7 @@ session.agent(
     handoff={"mode": "warm", "target": "+15125551212", "brief": "auto"},
     hangup={},
     eventHook="/agent-events",
+    actionHook="/agent-complete",
 )
 await session.send()
 ```
@@ -919,7 +1206,7 @@ await session.send()
 
 > **Krisp requires an API key** on self-hosted jambonz — that covers turn detection, interrupt prediction, and Krisp noise isolation. RNNoise noise isolation is the key-free alternative.
 
-## 17. A tuning cheat-sheet
+## 20. A tuning cheat-sheet
 
 | Symptom | Likely cause | Knob |
 |---|---|---|
@@ -929,11 +1216,14 @@ await session.send()
 | Bot stops for coughs/noise | Debounce too short | Raise `bargeIn.minSpeechDuration`; add `noiseIsolation` |
 | Bot ignores real interruptions | Barge-in disabled or debounce too long | Check `bargeIn.enable`; lower `minSpeechDuration` |
 | `earlyGeneration` seems to do nothing on Flux | No eager EOT signal | Set `stt.deepgramOptions.eagerEotThreshold` |
-| Long calls get expensive / lose the plot | Unbounded history | Enable history summarization |
+| Long calls get expensive / lose the plot | Unbounded history | Set `JAMBONES_AGENT_SUMMARIZE_TURNS` on the feature-server |
 | Awkward silence during lookups | No latency cover | Add `toolFiller` |
+| Spanish caller gets an English voice | No language adaptation | `autoLockLanguage` + `languageConfig` with a multilingual recognizer |
+| Caller goes quiet, call just hangs | Bot never re-engages | Tune `noResponseTimeout` (default 12 s; `0` disables) |
+| Bot resumes in silence after failed transfer | `transfer.returned` unhandled | On that event, send a `generate_reply` |
 
 ---
 
 ## Wrapping up
 
-The cascaded `agent` verb is a lot of machinery, but the mental model is simple: it's a pipeline — *is there speech? what did they say? are they done? respond, and stop if they interrupt* — with an explicit state machine you can tune at every stage. Mix the STT, LLM, and TTS vendors that fit your latency and quality budget; let native STT turn-taking or Krisp decide when the caller is done; use interrupt prediction to stop for real interruptions and ignore backchannels; and hide LLM latency with early generation. Wire in tools, MCP servers, and human handoff, and you have a production voice agent — all from one verb and a handful of options.
+The cascaded `agent` verb is a lot of machinery, but the mental model is simple: it's a pipeline — *is there speech? what did they say? are they done? respond, and stop if they interrupt* — with an explicit state machine you can tune at every stage, and a per-turn latency report that tells you exactly which stage to tune. Mix the STT, LLM, and TTS vendors that fit your latency and quality budget; let native STT turn-taking or Krisp decide when the caller is done; use interrupt prediction to stop for real interruptions and ignore backchannels; and hide LLM latency with early generation. Wire in tools, MCP servers, mid-call control, and human handoff — with a graceful path for every way a call can end — and you have a production voice agent, all from one verb and a handful of options.
