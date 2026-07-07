@@ -1,35 +1,28 @@
 ---
 title: "jambonz v11: New Media Server Doubles Capacity"
 date: 2026-07-06
-description: "jambonz v11 replaces FreeSWITCH with a custom media server, roughly doubling capacity and improving voice AI platform performance."
+description: "jambonz v11 replaces FreeSWITCH with a custom media server, more than doubling capacity and improving voice AI platform performance."
 author: "Dave Horton"
 tags: ["jambonz-v11", "voice-ai", "media-server", "freeswitch", "scalability"]
 draft: true
 faq:
   - question: "Why did jambonz remove FreeSWITCH?"
-    answer: "FreeSWITCH was a general-purpose media server that jambonz only used a fraction of, and the unused overhead limited how far a single cluster could scale. Removing it let us build something scoped to exactly what jambonz needs."
+    answer: "FreeSWITCH is a general-purpose media server that jambonz only used a fraction of, and the unused overhead limited how far a single cluster could scale. Removing it let us build something scoped to exactly what jambonz needs."
   - question: "How much faster is jambonz v11?"
     answer: "It's about capacity, not raw speed. In a like-for-like test on identical 4-vCPU hardware, the new media server sustained more than twice the concurrent sessions FreeSWITCH did — around 750 versus 290 on a stripped-down playout app — using about half the CPU per call and a fraction of the memory. Real-world capacity depends on what each call actually does, but on the same hardware a cluster handles close to double the traffic before you add servers."
   - question: "Does jambonz v11 still support self-hosted deployments?"
     answer: "Yes. Self-hosted voice AI scalability was the main motivation for this release. jambonz runs a large share of its traffic on infrastructure customers manage themselves, and this is where the capacity gains matter most."
+  - question: "Will the OSS version of jambonz adopt the new media server?"
+    answer: "No, the newer/faster media server will be available only to commercial customers; the open source (0.x) software stream will continue to rely on the legacy Freeswitch implementation."
 ---
 
-jambonz v11 is our biggest release yet. It introduces voice agent handoff, call center coach mode, session observability, new turn-taking models, and Arm64 support. Underneath it sits a rewritten media server that roughly doubles how much a jambonz cluster can carry.
+jambonz version 11 is our biggest release yet. It introduces new vendor choices for LLM, STT, and TTS, simplified voice agent handoff tools, support for arm64, and the latest turn-taking models from Krisp. Underneath it sits a rewritten media server that roughly doubles how much a jambonz cluster can carry.
 
 We've always built [jambonz](https://www.jambonz.org/) around scalability. For most of the platform's life, FreeSWITCH was the limiting factor. In v11, we replaced it.
 
-## jambonz v10 vs. v11
-
-| Feature | v10 | v11 |
-| --- | --- | --- |
-| Media server | FreeSWITCH | Custom jambonz media server |
-| Capacity | Baseline | ~2× concurrent sessions |
-| Scaling approach | Add servers sooner | Scale further on the same hardware |
-| Architecture support | x86 (amd64) | amd64 + Arm64 |
-
 ## Why We Removed FreeSWITCH
 
-FreeSWITCH is a general-purpose media server, and a solid one. It handles a wide range of telephony use cases we never touched, and we only ever needed a fraction of what it offers. That's normal for a general-purpose tool. But the parts we didn't use still ran in the same process, and we couldn't strip them out without forking a project we didn't own and had no plan to maintain long-term.
+FreeSWITCH is a general-purpose media server, and a solid one. Developed for a broad range of use cases, it's a bit like a swiss army knife replete with a voluminous set of features.  For our purposes, though, many of those features were unused and some of them limited the scalability of jambonz systems.
 
 So for years, when a single jambonz cluster hit its ceiling, the answer was to add more boxes rather than raise the ceiling itself.
 
@@ -37,11 +30,13 @@ So for years, when a single jambonz cluster hit its ceiling, the answer was to a
 
 We wrote our own media server, scoped only to what jambonz needs:
 
-- No general-purpose switching logic built for use cases we never touch
-- No legacy protocol support for systems nobody running jambonz has ever needed
-- No call routing paths we inherited instead of designed
+- Written in Go for performance and improved memory management
+- stream-lined command interface purpose-built to speed call setup and handle more calls/sec
+- no dialplans or complex configurations 
+- smaller memory footprint
+- built-in cli for observability and management
 
-What's left exists because a jambonz call needs it, not because FreeSWITCH happened to ship with it.
+Building our own media server around exactly what jambonz needs and nothing more is the logical next step for us to improve the scalability and feature set of jambonz, and now we've done it.
 
 ## How Much Did Capacity Improve in jambonz v11?
 
