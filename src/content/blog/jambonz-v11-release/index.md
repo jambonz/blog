@@ -82,5 +82,3 @@ As deployments grow, capacity becomes just as important as features. v11 raises 
 ## Availability
 
 **jambonz v11 is available now on [jambonz.cloud](https://jambonz.cloud/).** Support for self-hosted deployments follows shortly.
-
-[**See what v11 changes for your deployment.**](https://jambonz.org/)
