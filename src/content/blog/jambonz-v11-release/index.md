@@ -22,21 +22,21 @@ We've always built [jambonz](https://www.jambonz.org/) around scalability. For m
 
 ## Why We Removed FreeSWITCH
 
-FreeSWITCH is a general-purpose media server, and a solid one. Developed for a broad range of use cases, it's a bit like a swiss army knife replete with a voluminous set of features.  For our purposes, though, many of those features were unused and some of them limited the scalability of jambonz systems.
+FreeSWITCH is a general-purpose media server, and a solid one. Developed for a broad range of use cases, it's a bit like a swiss army knife replete with a voluminous set of features.  For our purposes, though, many of those features were unused and some of them limited the scalability of the jambonz platform.
 
-So for years, when a single jambonz cluster hit its ceiling, the answer was to add more boxes rather than raise the ceiling itself.
+So for years, when a single jambonz cluster hit its ceiling, the answer was to add more feature servers rather than raise the ceiling itself.
 
 ## A Purpose-Built Media Server for jambonz
 
 We wrote our own media server, scoped only to what jambonz needs:
 
 - Written in Go for performance and improved memory management
-- stream-lined command interface purpose-built to speed call setup and handle more calls/sec
-- no dialplans or complex configurations 
-- smaller memory footprint
+- stream-lined command interface that is purpose-built to speed jambonz call setup and handle more calls/sec
+- minimal configuration: no dialplans or complex configurations 
+- much smaller memory footprint and much easier to build
 - built-in cli for observability and management
 
-Building our own media server around exactly what jambonz needs and nothing more is the logical next step for us to improve the scalability and feature set of jambonz, and now we've done it.
+Building our own media server around exactly what jambonz needs was the logical next step for us to improve the scalability and feature set of jambonz.  In version 11 we've done it.
 
 ## How Much Did Capacity Improve in jambonz v11?
 
@@ -52,7 +52,9 @@ To measure the media server in isolation, we ran the old and new servers head-to
 
 On identical work, the new server carried more than twice the concurrent sessions — closer to 2.5× — at roughly half the CPU per call and a fraction of the memory. Just as important is *how* each behaves at the ceiling: the old server hit a wall and began timing out calls, while the new one simply stops accepting new calls and keeps the ones it has running cleanly. The container image shrank too, from about 735 MB to 131 MB — roughly 6 times smaller — which means faster pulls, quicker cold starts, and less to move around when you're autoscaling.
 
-**A word on what these numbers mean.** This was a deliberately minimal application — answer the call, play a short cached prompt, hang up — over G.711, with no speech recognition, no LLM, and no turn-taking. We built it that way on purpose, to isolate the media engine and compare the two servers on exactly the same work. A production voice-AI agent does far more per call — live transcription, streaming synthesis, turn detection, often recording — so its absolute per-box capacity lands well below these figures. How many sessions a box holds depends heavily on the application; treat ~750 as the ceiling for the lightest possible workload, not a promise for a full agent. What *does* carry across workloads is the shape of the comparison — about half the CPU per call, a fraction of the memory, and graceful degradation instead of collapse — and those hold whether a call is doing a little or a lot. That's why we describe the gain as *roughly doubling* what a cluster can carry: it's the conservative, workload-independent read of a bigger measured difference.
+**A word on what these numbers mean.** This was a deliberately minimal application — answer the call, play a short cached prompt, hang up — over G.711, with no speech recognition, no LLM, and no turn-taking. We built it that way on purpose, to isolate the media engine and compare the two servers on exactly the same work. A production voice-AI agent does far more per call — live transcription, streaming synthesis, turn detection, often recording — so its absolute per-box capacity lands well below these figures. How many sessions a box holds depends heavily on the application; treat ~750 as the ceiling for the lightest possible workload, not a promise for a full agent. (On jambonz.cloud we comfortably run 500-600 concurrent calls on a 4cpu arm64 c7g.xlarge instance type feature server).
+
+What *does* carry across workloads is the shape of the comparison — about half the CPU per call, a fraction of the memory, and graceful degradation instead of collapse — and those hold whether a call is doing a little or a lot. That's why we describe the gain as *roughly doubling* what a cluster can carry: it's the conservative, workload-independent read of a bigger measured difference.
 
 For self-hosted customers, that turns into one of two things:
 
@@ -71,10 +73,14 @@ There's more in v11 beyond the media server rewrite:
 - **Timeout handling for speech-to-speech models**, closing a gap some of you came to jambonz specifically to avoid
 - [**Arm64**](https://en.wikipedia.org/wiki/AArch64) **support**, alongside amd64, worth a look if you're comparing instance costs for a [self-hosted deployment](https://docs.jambonz.org/self-hosting/overview)
 
-Session observability, voice agent handoff, and call center coach mode each get their own post this week.
+We'll be covering session observability, voice agent handoff, and call center coach mode in follow-up posts later this month.
 
 ## What v11 Means for Self-Hosted Voice AI
 
 As deployments grow, capacity becomes just as important as features. v11 raises the number of calls a single box can handle before additional hardware is required, making it easier to scale without expanding infrastructure too soon.
+
+## Availability
+
+**jambonz v11 is available now on [jambonz.cloud](https://jambonz.cloud/).** Support for self-hosted deployments follows shortly.
 
 [**See what v11 changes for your deployment.**](https://jambonz.org/)
