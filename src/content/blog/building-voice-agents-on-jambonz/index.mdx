@@ -1,0 +1,1273 @@
+---
+title: "Building voice agents on jambonz: the nuts and bolts"
+date: 2026-07-01
+description: "The complete guide to the jambonz agent verb — the cascaded STT → LLM → TTS pipeline, supported vendors, the turn latency budget, turn detection (native STT and Krisp), VAD, barge-in and interrupt prediction, early generation, multilingual calls, tool calling, MCP servers, the built-in handoff-to-human tool, mid-call control, and per-turn observability."
+author: "Dave Horton"
+tags: ["voice-ai", "llm", "turn-detection", "agent", "stt", "tts"]
+draft: true
+---
+
+import CodeTabs from '../../../components/CodeTabs.astro';
+
+Most "how to build a voice agent" tutorials stop at "connect an LLM to a phone number." This is not that post. This is a tour of the machinery — every knob you can turn on a jambonz cascaded voice agent, why it exists, and how the pieces fit together into a low-latency, interruptible, tool-calling conversation.
+
+If you've read LiveKit's excellent write-up on turn detection and interruption handling, this covers the same territory for jambonz, plus the parts they leave out: the LLM layer, tool calling, MCP, and the built-in handoff-to-human tool.
+
+We're going to talk about the **cascaded** pipeline — speech-to-text → LLM → text-to-speech, with a real turn-taking state machine in the middle. (jambonz also supports speech-to-speech / realtime models like the OpenAI Realtime API, but that's a different architecture and a different post.) The cascaded pipeline is what most production agents run, because it lets you mix and match the best STT, LLM, and TTS vendors independently and gives you fine-grained control over turn-taking and barge-in.
+
+Everything below is driven by a single verb: **`agent`** (available since jambonz 10.1). The goal of this post is to be the one reference you need: by the end you'll have seen every stage of the pipeline, every configuration knob, the reasoning behind each default, and how to tune the whole thing with real latency numbers — from an empty project to a production agent.
+
+> **Grab the code.** Every example in this post — and a complete runnable app for each major feature — lives in the companion repo, [jambonz/voice-agent-examples](https://github.com/jambonz/voice-agent-examples), in both TypeScript and Python.
+
+---
+
+## 1. The `agent` verb at a glance
+
+A jambonz application drives calls over a WebSocket using the jambonz Node SDK (`@jambonz/sdk`). To stand up a voice agent you configure one `agent` verb. Here's a minimal one, in full:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+import http from 'http';
+import { createEndpoint } from '@jambonz/sdk/websocket';
+
+const makeService = createEndpoint({ server: http.createServer(), port: 3000 });
+const svc = makeService({ path: '/agent' });
+
+svc.on('session:new', (session) => {
+  session
+    .agent({
+      llm: {
+        vendor: 'anthropic',
+        model: 'claude-haiku-4-5-20251001',
+        llmOptions: {
+          systemPrompt: 'You are a friendly receptionist for Acme Plumbing. Keep replies short.',
+          temperature: 0.4,
+        },
+      },
+      stt: { vendor: 'deepgram', language: 'en-US' },
+      tts: { vendor: 'elevenlabs', voice: 'Rachel' },
+    })
+    .send();
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+import asyncio
+from jambonz_sdk.websocket import create_endpoint
+
+async def main():
+    make_service, server = await create_endpoint(port=3000)
+    svc = make_service(path="/agent")
+
+    async def handle_session(session):
+        session.agent(
+            llm={
+                "vendor": "anthropic",
+                "model": "claude-haiku-4-5-20251001",
+                "llmOptions": {
+                    "systemPrompt": "You are a friendly receptionist for Acme Plumbing. Keep replies short.",
+                    "temperature": 0.4,
+                },
+            },
+            stt={"vendor": "deepgram", "language": "en-US"},
+            tts={"vendor": "elevenlabs", "voice": "Rachel"},
+        )
+        await session.send()
+
+    svc.on("session:new", handle_session)
+    await asyncio.Future()
+
+asyncio.run(main())
+```
+
+</Fragment>
+</CodeTabs>
+
+That's a working agent. Everything else in this post is refinement — and to keep the snippets focused, the examples below show just the relevant `agent()` option rather than the whole handler. The full set of top-level properties:
+
+| Property | Purpose |
+|---|---|
+| `llm` | The "brain" — vendor, model, prompt, tools, generation params |
+| `stt` | Speech recognizer config (falls back to application defaults) |
+| `tts` | Speech synthesizer config (falls back to application defaults) |
+| `bargeIn` | Interruption behavior |
+| `turnDetection` | How the agent decides the user has finished a turn |
+| `earlyGeneration` | Speculative LLM generation while the user is still finishing |
+| `noiseIsolation` | Krisp / RNNoise background-noise suppression |
+| `handoff` | Injects a `transfer_to_human` tool for escalation |
+| `hangup` | Injects a `hangup` tool so the model can end the call |
+| `toolHook` | Webhook (or WebSocket message) that executes your custom tools |
+| `toolFiller` | Audio or backchannel to cover tool-execution latency |
+| `mcpServers` | Remote MCP servers whose tools the agent can call |
+| `eventHook` | Webhook that receives per-turn and lifecycle events |
+| `actionHook` | Webhook invoked when the agent ends (with a completion reason) |
+| `noResponseTimeout` | Seconds of silence before re-prompting the caller (default 12) |
+| `autoLockLanguage` | Lock STT/TTS to the detected language |
+| `languageConfig` | Per-language TTS overrides used by `autoLockLanguage` |
+| `greeting` | Whether the agent speaks first (default `true`) |
+
+### What you need before you start
+
+A quick checklist, so the rest of the post can focus on the interesting parts:
+
+- **jambonz 10.1 or later** — a [jambonz.cloud](https://jambonz.cloud) account or a self-hosted deployment.
+- **A WebSocket application.** The `agent` verb requires WebSocket transport (not HTTP webhooks) — the conversation is inherently bidirectional: events stream out, tool results and mid-call updates stream in. Create an application in the portal whose calling webhook is your app's `wss://` URL, and point a phone number or SIP trunk at it.
+- **Speech and LLM credentials**, added to your account in the portal. The verb references them implicitly by `vendor` (plus an optional `label` when you have several credentials for the same vendor). You can also pass inline `auth` on the `llm` object for dynamic keys.
+- **The SDK**: `npm install @jambonz/sdk` for Node/TypeScript, or `pip install jambonz-python-sdk` for Python. Every example below is shown in both.
+- **A Krisp API key**, only if you're self-hosting *and* want the Krisp features covered below (turn detection, interrupt prediction, Krisp noise isolation). RNNoise noise isolation needs no key.
+
+{/* SCREENSHOT: portal → Applications → edit screen showing a WebSocket calling webhook (wss://...) — annotate/crop to the webhook field */}
+
+{/* SCREENSHOT: portal → Speech services (or LLM credentials) list showing a couple of configured vendors — illustrates the "credentials by vendor + label" point */}
+
+We'll go through each cluster in turn.
+
+---
+
+## 2. Pipeline architecture
+
+The cascaded pipeline is a sequence of stages, and — exactly as in any real-time voice system — each stage answers one question:
+
+```
+  caller audio
+      │
+      ▼
+ ┌─────────┐   Is there speech?        (VAD / STT speech-start)
+ │  STT +  │   What did they say?      (interim + final transcripts)
+ │   VAD   │   Have they finished?     (turn detection)
+ └─────────┘
+      │  final transcript + end-of-turn
+      ▼
+ ┌─────────┐   Generate a response     (streaming tokens)
+ │   LLM   │   Call a tool?            (tool / MCP / handoff)
+ └─────────┘
+      │  token stream
+      ▼
+ ┌─────────┐   Speak it                (streaming TTS)
+ │   TTS   │   Stop mid-word if the caller barges in
+ └─────────┘
+```
+
+Internally the `agent` verb is a **state machine**. It's worth understanding, because almost every tuning decision maps onto a state or a transition. The states are:
+
+| State | Meaning |
+|---|---|
+| `Idle` | Waiting for the caller. May play the greeting. |
+| `UserSpeaking` | Caller is talking; transcript is accumulating. |
+| `Preflighting` | Speculatively running the LLM before the turn is confirmed (see §10). |
+| `AwaitingFinalTranscript` | Turn-end fired but the authoritative transcript hasn't arrived yet. |
+| `Thinking` | Committed to a response; LLM is generating. |
+| `AssistantSpeaking` | TTS is playing; caller can barge in. |
+
+The happy path is `Idle → UserSpeaking → Thinking → AssistantSpeaking → Idle`, looping for each turn. The interesting states — `Preflighting` and `AwaitingFinalTranscript` — exist entirely to shave latency or improve turn-taking accuracy, and they're what the rest of this post is about.
+
+One invariant worth stating up front, because it explains a lot of the design: **conversation history is only written in committed states.** The user message is written on the transition *into* `Thinking`; the assistant message is written when the LLM stream completes. Speculative work in `Preflighting` never mutates history — on a miss it's simply discarded, with zero cleanup.
+
+---
+
+## 3. Anatomy of a turn: the latency budget
+
+Before diving into the individual components, it's worth understanding where the time goes, because every tuning decision in this post attacks one specific segment of the same timeline. Here's the anatomy of a single turn, from the moment the caller stops talking to the moment they hear the bot:
+
+```
+caller stops speaking
+  │
+  │  endpointing            silence detection inside the STT
+  │                         (Deepgram default: 500 ms)
+  ▼
+final transcript ready ──── transcriber_latency
+  │
+  │  turn_detection_latency  extra wait for the end-of-turn decision
+  │                          (zero when EOT arrives with/before the transcript)
+  ▼
+LLM prompted
+  │
+  │  model_latency           time-to-first-token from the LLM
+  ▼
+first token
+  │
+  │  voice_latency           first text sent to TTS → first audio back
+  ▼
+caller hears the bot
+```
+
+The perceived response time is the **sum** of these segments, and a good conversational target is under about a second of voice-to-voice latency. jambonz measures every segment on every turn (they're delivered to your `eventHook`, with exactly these names — see the observability section), so you're never guessing which part is slow. The levers, segment by segment:
+
+- **Endpointing + turn detection** — the biggest and most under-appreciated chunk. A silence-based endpointer *must* wait out its full silence window on every single turn; a native turn-taking model (Deepgram Flux, AssemblyAI) or Krisp's acoustic model can fire as soon as the caller *sounds* finished, often hundreds of milliseconds sooner. And because Krisp listens to local audio while the STT is network-bound, its end-of-turn routinely lands *before* the final transcript — turning `turn_detection_latency` into zero.
+- **Transcriber latency** — vendor and model choice.
+- **Model latency** — a fast model (Groq-class TTFT), `reasoningEffort: 'minimal'`, and above all **early generation**, which runs the LLM *during* the turn-detection wait. On a preflight hit, `model_latency` disappears from the turn report entirely — generation happened while the endpointer was still deciding.
+- **Voice latency** — a streaming TTS vendor, plus the TTS cache for repeated prompts.
+
+Keep this timeline in mind as you read — each section below names the segment it improves.
+
+---
+
+## 4. Speech-to-text (STT)
+
+The `stt` object selects and configures the recognizer. If you omit it, the agent inherits the account/application default recognizer.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+stt: {
+  vendor: 'deepgram',
+  language: 'en-US',
+  model: 'nova-3',
+  hints: ['Acme Plumbing', 'boiler', 'thermostat'],
+  hintsBoost: 15,
+  deepgramOptions: { smartFormatting: true, endpointing: 500 },
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={
+    "vendor": "deepgram",
+    "language": "en-US",
+    "model": "nova-3",
+    "hints": ["Acme Plumbing", "boiler", "thermostat"],
+    "hintsBoost": 15,
+    "deepgramOptions": {"smartFormatting": True, "endpointing": 500},
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+### Supported STT vendors
+
+jambonz supports a broad set of recognizers, and this is a genuine differentiator — you are not locked to one vendor's ASR:
+
+`google`, `aws` (Amazon Transcribe), `microsoft` (Azure), `deepgram`, `deepgramflux` (Deepgram's turn-aware Flux model), `elevenlabs`, `gladia`, `soniox`, `nvidia`, `assemblyai`, `houndify`, `cartesia`, `speechmatics`, `speechmaticspreview` (Speechmatics' Voice-Agent/turn API), and `openai` (Whisper). You can also register a `custom:*` vendor to point at your own recognizer.
+
+### Common recognizer settings
+
+These apply across vendors (support varies):
+
+- `vendor`, `language`, `label` (which credential to use), `model`
+- `hints` / `hintsBoost` — keyword/phrase biasing; hints can be plain strings or `{phrase, weight}` objects
+- `altLanguages` — alternative languages for multilingual recognition (Google, Azure)
+- `interimResults` — request partial hypotheses
+- `punctuation`, `profanityFilter`
+- `minConfidence` — reject transcripts below a confidence floor
+- `fallbackVendor` / `fallbackLanguage` / `fallbackLabel` — automatic failover to a second recognizer
+
+Every vendor also has its own option bag — `deepgramOptions`, `googleOptions`, `azureOptions`, `assemblyAiOptions`, `speechmaticsOptions`, `openaiOptions`, `nvidiaOptions`, `sonioxOptions`, and so on — for vendor-specific features like diarization, redaction, numeral formatting, entity detection, and endpointing timers. For example, the agent applies sensible defaults automatically: for Deepgram it turns on `smartFormatting` and sets `endpointing: 500` (ms) unless you override them.
+
+### Native turn-taking vendors
+
+This matters a lot for the turn-detection section below. Three recognizers emit **end-of-turn signals as part of their transcription stream** — they've done the turn-detection work for you:
+
+- `deepgramflux`
+- `assemblyai`
+- `speechmaticspreview`
+
+When you use one of these, the agent uses its native `endOfTurn` events and doesn't need an external turn-taking mechanism. A slightly larger set also emits native **speech-start** events (`deepgramflux`, `assemblyai`, `openai`), which means the agent doesn't need to spin up a separate VAD just to know when the caller started talking.
+
+---
+
+## 5. Text-to-speech (TTS)
+
+The `tts` object selects and configures the synthesizer; omit it to inherit the application default voice.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+tts: {
+  vendor: 'elevenlabs',
+  language: 'en-US',
+  voice: '21m00Tcm4TlvDq8ikWAM',
+  options: {
+    model_id: 'eleven_turbo_v2_5',
+    voice_settings: { stability: 0.5, similarity_boost: 0.8, speed: 1.05 },
+  },
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+tts={
+    "vendor": "elevenlabs",
+    "language": "en-US",
+    "voice": "21m00Tcm4TlvDq8ikWAM",
+    "options": {
+        "model_id": "eleven_turbo_v2_5",
+        "voice_settings": {"stability": 0.5, "similarity_boost": 0.8, "speed": 1.05},
+    },
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+### Supported TTS vendors
+
+`deepgram`, `cartesia`, `elevenlabs`, `rimelabs`, `google`, `microsoft`, `whisper`, `inworld`, `resemble`, `nvidia`, plus `custom:*`.
+
+### Synthesizer settings
+
+- `vendor`, `language`, `voice`, `label`, `engine` (e.g. `neural`)
+- `options` — the vendor-specific bag (ElevenLabs `model_id` and `voice_settings`; Cartesia `speed`, `emotion`, `add_timestamps`; etc.)
+
+### Streaming and word-level alignment
+
+For low latency, jambonz streams TTS: LLM tokens flow into the synthesizer and audio flows to the caller before the full response is generated. Several vendors (ElevenLabs, Cartesia, Rimelabs, and others) also emit **word-level timing alignment**. That alignment is not cosmetic — it's what makes clean barge-in possible. When a caller interrupts, the agent asks the streaming buffer *which words were actually spoken* and rewrites the assistant's conversation-history entry to exactly that prefix (see §9). Without alignment, the model would "think" it said things the caller never heard.
+
+### Caching
+
+TTS output is cached by default, keyed on the text plus the full voice identity (account, vendor, language, voice, engine, model, credentials). Static prompts — greetings, menu prompts, hold messages — cost you one synthesis and then replay from cache. Set `disableTtsCache: true` to opt out.
+
+---
+
+## 6. The LLM (the brain)
+
+The `llm` object is where you pick the model and shape its behavior:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+llm: {
+  vendor: 'openai',
+  model: 'gpt-4o',
+  label: 'my-openai-key',
+  llmOptions: {
+    systemPrompt: 'You are ...',
+    temperature: 0.5,
+    maxTokens: 400,
+    tools: [ /* ... */ ],
+    initialMessages: [ /* seed the conversation */ ],
+  },
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+llm={
+    "vendor": "openai",
+    "model": "gpt-4o",
+    "label": "my-openai-key",
+    "llmOptions": {
+        "systemPrompt": "You are ...",
+        "temperature": 0.5,
+        "maxTokens": 400,
+        "tools": [],            # ...
+        "initialMessages": [],  # seed the conversation
+    },
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+`vendor`, `model`, and `label` (which stored credential to use) select the model. `llmOptions` carries `systemPrompt`, `temperature`, `maxTokens`, `tools`, and optional `initialMessages`/`messages` to seed history. If you don't set `systemPrompt` but include a `system`-role message in `initialMessages`, that's used instead.
+
+### Supported LLM vendors
+
+jambonz uses a pluggable LLM layer (`@jambonz/llm`) with a vendor-agnostic wire contract, so the same agent config runs against any of these by changing `vendor`/`model`. The `agent` verb accepts these vendor ids:
+
+| Vendor | Auth | Example models |
+|---|---|---|
+| `openai` | API key | `gpt-4o`, `gpt-4o-mini`, `gpt-4-turbo`, `o1-mini` |
+| `anthropic` | API key | `claude-opus-4-7`, `claude-sonnet-4-6`, `claude-haiku-4-5` |
+| `google` (Gemini API) | API key | `gemini-2.5-pro`, `gemini-2.5-flash`, `gemini-2.0-flash` |
+| `vertex-gemini` | Service account | Gemini 2.5 / 2.0 / 1.5 on Vertex |
+| `vertex-openai` | Service account | `mistral-large`, Llama-3.x MaaS |
+| `azure-openai` | API key + endpoint + deployment | GPT-4o / GPT-4 deployments |
+| `bedrock` | IAM or Bedrock API key + region | Nova, Claude, Llama 3, Mistral |
+| `groq` | API key | `llama-3.3-70b-versatile`, `llama-3.1-8b-instant`, `gemma2-9b-it` |
+| `huggingface` | Token | HF Inference Providers |
+| `deepseek` | API key | DeepSeek models |
+| `baseten` | API key | Hosted OpenAI-compatible models |
+
+(The underlying library ships a few additional OpenAI-compatible adapters, e.g. Moonshot and Z.ai, that you can wire up as custom endpoints.)
+
+A note on **latency**: for a real-time voice agent, time-to-first-token dominates the felt responsiveness of the bot. This is exactly why the Groq adapter exists — Llama on LPU silicon delivers sub-200ms TTFT and much faster inter-token cadence than GPU-backed providers, and the agent feels noticeably snappier. When you tune an agent, pick the model with the latency you need, not just the raw quality score.
+
+### `reasoningEffort` — the thinking-budget knob
+
+Reasoning models can burn hundreds of milliseconds "thinking" before the first token — poison for a voice turn. `llmOptions.reasoningEffort` is a vendor-neutral control (`minimal`, `low`, `medium`, `high`) that the adapter maps to each provider's native mechanism (Gemini `thinkingLevel`, OpenAI `reasoning_effort`, Anthropic extended thinking) and ignores where there's no equivalent. For latency-sensitive turns, `minimal` keeps TTFT low. You can also pass `connectOptions` (`timeout`, `maxRetries`, `endpoint`/`baseURL`) to tune the client itself.
+
+### Conversation history
+
+The agent maintains history as a simple `{role, content}` array (`user`, `assistant`, `tool`), and the vendor adapter translates it to each provider's native wire shape (Gemini uses `model` instead of `assistant`; Anthropic and Bedrock have their own tool-turn ordering rules). You mostly don't think about this — but two capabilities are exposed to you: **history summarization** (below) and mid-call **context injection** (§16).
+
+### Long calls: history summarization
+
+On a long call, unbounded history costs you twice — every turn re-sends the whole conversation (tokens and prompt-processing latency), and very long contexts make some models drift. jambonz can summarize automatically: set the `JAMBONES_AGENT_SUMMARIZE_TURNS` environment variable on the feature-server (a deployment setting, not a verb property; minimum 8 when enabled).
+
+Every N turns, the agent takes everything *older* than the most recent N turns, has the same LLM summarize it ("preserving key facts, decisions, and context needed to continue the conversation naturally" — tool payloads are skipped, since summarizing raw tool results rarely helps), and folds the summary into the system prompt as a `## Conversation context` section. The old messages are dropped; the recent N stay verbatim. Each subsequent summarization replaces the context section rather than stacking. The result: context stays bounded no matter how long the call runs, while the agent keeps the facts that matter. A `history_summarized` event fires on your `eventHook` each time it happens.
+
+---
+
+## 7. Turn detection: knowing when the caller is done
+
+This is the heart of a good voice agent. End the turn too early and you interrupt the caller mid-thought; end it too late and the bot feels sluggish. jambonz gives you a layered set of mechanisms, configured with `turnDetection`.
+
+### Layer 1 — Native STT endpointing
+
+If your recognizer is one of the native turn-taking vendors (`deepgramflux`, `assemblyai`, `speechmaticspreview`), turn detection is built in. Deepgram Flux, for instance, uses an acoustic+semantic model and emits `EndOfTurn` directly on the transcription stream. This is the default and the lowest-latency option — you don't configure anything. `turnDetection: 'stt'` (or omitting it) uses native turn-taking when available.
+
+### Layer 2 — Krisp acoustic turn-taking
+
+If your recognizer doesn't do turn detection natively (Deepgram standard, Google, Azure, …), or you want to override the native behavior, you can bolt on **Krisp** — an acoustic model that listens for natural turn boundaries (intonation, pausing) independent of the transcript.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+turnDetection: { mode: 'krisp', threshold: 0.5 }
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+turnDetection={"mode": "krisp", "threshold": 0.5}
+```
+
+</Fragment>
+</CodeTabs>
+
+or the shorthand `turnDetection: 'krisp'`. The `threshold` (0–1, default `0.5`) trades off eagerness against patience — lower fires sooner. Krisp emits an `endOfTurn` with a probability score. If Krisp fires before the STT final transcript has arrived (it often does — acoustics beat transcription), the agent enters `AwaitingFinalTranscript` and waits up to a bounded timeout (2000 ms by default) for the words to catch up before prompting the LLM.
+
+### Endpointing timers, at a glance
+
+| Timer | Default | What it governs |
+|---|---|---|
+| Awaiting-final-transcript | 2000 ms | Max wait for STT text after Krisp fires end-of-turn |
+| Deepgram `endpointing` | 500 ms | Silence before Deepgram finalizes a transcript |
+| `noResponseTimeout` | 12000 ms | Silence in `Idle` before re-prompting the caller |
+
+---
+
+## 8. Voice Activity Detection (VAD)
+
+VAD answers the simplest question — "is anyone talking right now?" — and jambonz uses **Silero** for it. You rarely configure VAD directly; the agent enables it automatically only when it's actually needed:
+
+- **For barge-in**, when the STT vendor doesn't provide native speech-start events and you're not using Krisp interrupt prediction (which runs its own internal VAD). Silero then feeds the tentative-interruption path.
+- **For measurement**, when full observability is on and you're using a native-turn-taking STT — here Silero exists purely to timestamp when the caller stopped talking, so the dashboard can report accurate STT latency.
+
+In other words: if your STT already tells the agent when speech starts, jambonz doesn't waste CPU running a redundant VAD. This is a deliberate "no redundant work" design, and it's why VAD is mostly invisible in your config.
+
+---
+
+## 9. Interruption handling (barge-in)
+
+When the caller talks over the bot, you want the bot to stop — but not for a cough, a "mm-hmm," or a burst of background noise. `bargeIn` controls this.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+bargeIn: {
+  enable: true,
+  minSpeechDuration: 0.7,
+  strategy: 'vad',
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+bargeIn={
+    "enable": True,
+    "minSpeechDuration": 0.7,
+    "strategy": "vad",
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+- `enable` — master switch (default `true`).
+- `minSpeechDuration` — seconds of confirmed speech before a barge-in is committed (default `0.7`).
+- `sticky` — once interrupted, stay interrupted until the caller stops (rather than resuming the assistant).
+- `strategy` — `"vad"` (default) or `"interruptPrediction"`.
+
+### Strategy 1 — VAD (tentative then confirmed)
+
+Speech onset during `AssistantSpeaking` triggers a **tentative** interruption: the agent flips to `UserSpeaking` and starts a timer (`minSpeechDuration`, 700 ms by default). When the timer expires:
+
+- if VAD still shows speech (or an interim transcript has arrived), the interruption is **confirmed**;
+- if VAD already reported speech-stopped, it was a blip — the agent **reverts** to `AssistantSpeaking` and keeps talking.
+
+An interim transcript arriving during the window is treated as definitive proof and confirms immediately, without waiting out the timer.
+
+### Strategy 2 — Krisp interrupt prediction
+
+VAD can't tell a real interruption from a backchannel — "uh-huh," "right," "okay" — because acoustically they're all just speech. Krisp's **interrupt prediction** is an ML model that judges whether overlapping caller speech is a genuine attempt to take the floor or just active-listening noise.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+bargeIn: { strategy: 'interruptPrediction', threshold: 0.5 }
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+bargeIn={"strategy": "interruptPrediction", "threshold": 0.5}
+```
+
+</Fragment>
+</CodeTabs>
+
+With this strategy there's **no tentative pause and no `minSpeechDuration` debounce** — when the model says "this is a real interruption," the agent cuts over immediately. The result is a bot that stops promptly for genuine interruptions but ignores backchannels, which is exactly the behavior that makes a conversation feel natural. (Currently the interrupt-prediction vendor is Krisp; `threshold` defaults to `0.5`.) If interrupt prediction fails to start for any reason, the agent falls back to VAD barge-in automatically.
+
+{/* SCREENSHOT: session timeline showing an interrupted turn — the "user interruption" marker and the assistant's response visibly cut short */}
+
+### Trimming the response on interruption
+
+When a barge-in is confirmed, the agent doesn't just stop audio — it repairs history. Using the TTS word-alignment described in §5, it grabs the text that was *actually spoken*, truncates the assistant's history entry to that prefix (with a trailing marker), clears the TTS buffer, and interrupts the in-flight LLM stream. The model's memory of the conversation now matches what the caller actually heard. It also fires a `user_interruption` event on your `eventHook`.
+
+---
+
+## 10. Early generation (preflight)
+
+This is the most interesting latency optimization in the pipeline, so it gets its own section.
+
+**The problem.** There's inherent dead time between "the caller finished" and "the bot starts talking": you wait for the end-of-turn signal, *then* wait for the final transcript, *then* send it to the LLM, *then* wait for the first token. Turn detection and transcription are partly serialized, and the LLM's time-to-first-token stacks on top.
+
+**The idea.** What if, the moment we have a *tentative* transcript, we start generating the response speculatively — while the turn-detection machinery is still confirming the caller is done? If our guess at the transcript was right, the response is already generated and we release it instantly. If it was wrong, we throw it away.
+
+That's early generation. It comes in two flavors depending on your turn detector:
+
+- **With Krisp turn detection**, it's opt-in — set `earlyGeneration: true`. Krisp emits an early signal that fires the speculative prompt before it confirms the turn has actually ended.
+- **With Deepgram Flux**, it's automatic — Flux's native `EagerEndOfTurn` event drives preflight regardless of the `earlyGeneration` flag (provided you've set an eager threshold; see the caveat below). The other native-turn-taking recognizers (AssemblyAI, Speechmatics) don't emit a preflight signal, so early generation isn't available with them.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+turnDetection: 'krisp',
+earlyGeneration: true,
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+turnDetection="krisp",
+earlyGeneration=True,
+```
+
+</Fragment>
+</CodeTabs>
+
+**How it works.** On an early/eager end-of-turn signal, the agent enters `Preflighting` and calls the LLM speculatively (`promptSpeculative`) with the interim transcript. Generated tokens are **buffered, not spoken**, and — critically — this speculative prompt **does not touch conversation history**. Then one of three things happens:
+
+- **Hit.** The authoritative end-of-turn arrives and its (normalized) transcript matches what we preflighted. The buffered tokens are released to TTS *immediately* — the LLM latency has been hidden entirely behind the turn-detection wait. The user and assistant messages are committed to history at this point.
+- **Miss.** The final transcript differs from our guess. Buffered tokens are discarded and the agent re-prompts with the correct transcript — no harm done, and no history pollution.
+- **Cancel.** The caller keeps talking during preflight (a new interim arrives). That means the first "final" was mid-utterance. The speculative prompt is aborted, tokens discarded, and the agent returns to `UserSpeaking`.
+
+The agent tracks hit/miss/cancel counts so you can see how often preflight is paying off.
+
+**The Deepgram Flux caveat.** Flux's early generation needs an *eager* end-of-turn threshold to trigger on. You must set `stt.deepgramOptions.eagerEotThreshold` — otherwise Flux never emits `EagerEndOfTurn` events and preflight never fires. (The agent logs a warning if it sees `earlyGeneration: true` on Flux without it.)
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+stt: {
+  vendor: 'deepgramflux',
+  deepgramOptions: { eagerEotThreshold: 0.7 },
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={
+    "vendor": "deepgramflux",
+    "deepgramOptions": {"eagerEotThreshold": 0.7},
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+---
+
+## 11. Noise isolation
+
+Background noise hurts everything downstream — it lowers transcription confidence and confuses barge-in detection. jambonz can run **Krisp** (or **RNNoise**) noise cancellation on the audio before STT and VAD ever see it.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+noiseIsolation: 'krisp'
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+noiseIsolation="krisp"
+```
+
+</Fragment>
+</CodeTabs>
+
+or, with control:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+noiseIsolation: { mode: 'krisp', level: 100, direction: 'read' }
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+noiseIsolation={"mode": "krisp", "level": 100, "direction": "read"}
+```
+
+</Fragment>
+</CodeTabs>
+
+- `mode` — `krisp` or `rnnoise`.
+- `level` — 0–100 suppression strength (default `100`).
+- `direction` — `read` (default) suppresses noise on the *inbound* caller audio.
+
+Note this is independent of Krisp turn-taking and interrupt prediction, even though they share the vendor — you can run noise isolation with any STT and any turn-detection strategy.
+
+---
+
+## 12. Keeping the conversation alive: greeting, silence, and language
+
+Three smaller behaviors round out the conversational loop. They're easy to overlook, and they're the difference between a demo and something callers actually enjoy talking to.
+
+### Who speaks first
+
+By default (`greeting: true`) the agent speaks first: at startup it prompts the LLM with a synthetic *"Begin the conversation."* turn, so the opening line comes from your system prompt — put the greeting you want there ("Answer as a receptionist for Acme Plumbing; open by asking how you can help"). Set `greeting: false` and the agent waits silently for the caller — the right choice for outbound calls where the callee says "hello?" first.
+
+### When the caller goes quiet
+
+If the agent sits in `Idle` with no caller speech for `noResponseTimeout` seconds (default 12; `0` disables), it re-engages — not with a canned recording, but by prompting the LLM with a synthetic turn:
+
+> *(The user has not responded. Briefly check if they are still there or ask if they need help.)*
+
+So the re-engagement is in the agent's own voice and persona, and aware of the conversation so far ("Are you still there? We were just about to look up your order…"). The timer resets whenever the caller speaks, and each timeout is counted in the session stats.
+
+### Multilingual callers
+
+If your callers may speak more than one language, `autoLockLanguage` plus `languageConfig` handles it. Pair it with a multilingual recognizer (this is built for Deepgram Flux multilingual):
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+stt: { vendor: 'deepgramflux', language: 'multi' },
+autoLockLanguage: 'always',
+languageConfig: {
+  'es-ES': { tts: { voice: 'a-spanish-voice-id' } },
+  'de-DE': { tts: { voice: 'a-german-voice-id' } },
+},
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+stt={"vendor": "deepgramflux", "language": "multi"},
+autoLockLanguage="always",
+languageConfig={
+    "es-ES": {"tts": {"voice": "a-spanish-voice-id"}},
+    "de-DE": {"tts": {"voice": "a-german-voice-id"}},
+},
+```
+
+</Fragment>
+</CodeTabs>
+
+How it works: the recognizer reports the detected language in its metadata each turn, and the agent reacts in one of two modes:
+
+- **`autoLockLanguage: true`** — lock on the *first* detected language and stay there. The agent live-reconfigures the recognizer's language hints to the detected language (on vendors that support mid-stream reconfiguration), which improves accuracy for the rest of the call.
+- **`autoLockLanguage: 'always'`** — adapt on *every* turn. The recognizer's hints stay broad (so it can keep detecting switches), and whenever the language changes the agent swaps the TTS voice.
+
+The TTS swap comes from `languageConfig`: keys are BCP-47 codes, and each entry's `tts` object is merged over your base `tts` config. When the voice actually changes, the live TTS stream reconnects with the new voice mid-call — a caller who switches to Spanish gets answered in a Spanish voice on the very next turn.
+
+{/* SCREENSHOT (optional): session timeline of a call where the caller switches language mid-conversation — English turns then Spanish turns with the voice change visible in the transcript */}
+
+---
+
+## 13. Tool calling
+
+An agent that can only talk isn't very useful. Tools let the model look up an order, book an appointment, or check availability. Define tools in `llmOptions.tools` using standard JSON-Schema function definitions:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+llm: {
+  vendor: 'openai',
+  model: 'gpt-4o',
+  llmOptions: {
+    systemPrompt: '...',
+    tools: [{
+      name: 'lookup_order',
+      description: 'Look up an order by its ID',
+      parameters: {
+        type: 'object',
+        properties: { order_id: { type: 'string' } },
+        required: ['order_id'],
+      },
+    }],
+  },
+},
+toolHook: '/tools',
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+llm={
+    "vendor": "openai",
+    "model": "gpt-4o",
+    "llmOptions": {
+        "systemPrompt": "...",
+        "tools": [{
+            "name": "lookup_order",
+            "description": "Look up an order by its ID",
+            "parameters": {
+                "type": "object",
+                "properties": {"order_id": {"type": "string"}},
+                "required": ["order_id"],
+            },
+        }],
+    },
+},
+toolHook="/tools",
+```
+
+</Fragment>
+</CodeTabs>
+
+When the model decides to call `lookup_order`, the agent dispatches it to your **`toolHook`** and feeds the result back into the conversation so the model can continue. In the SDK you handle it on the hook path and answer with `sendToolOutput`:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+session.on('/tools', async (evt) => {
+  const { tool_call_id, name, arguments: args } = evt;
+  if (name === 'lookup_order') {
+    const order = await db.lookupOrder(args.order_id);
+    session.sendToolOutput(tool_call_id, JSON.stringify(order));
+  }
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+async def on_tool(evt):
+    if evt.get("name") == "lookup_order":
+        order = await db.lookup_order(evt["arguments"]["order_id"])
+        await session.tool_output(evt.get("tool_call_id", ""), order)
+
+session.on("/tools", on_tool)
+```
+
+</Fragment>
+</CodeTabs>
+
+Under the hood the agent sends an `agent:tool-call` request with the tool name, call ID, and (already-parsed) arguments; `sendToolOutput` returns the result as an `llm:tool-output` message. There's a safety timeout (20 seconds by default) so a hung tool can't wedge the call. After the result comes back, the agent re-prompts the LLM with the tools still in scope (some providers — Anthropic in particular — require the tool definitions to stay visible across the tool-call turn).
+
+### Pre-built tools
+
+Before hand-rolling a handler, check `@jambonz/tools` (a Node package) — it ships ready-made, schema-included tools: `get_weather`, `web_search` (Tavily, needs an API key), `calculator`, `get_datetime`, and `wikipedia`. Each factory exposes a `.schema` you drop into `llmOptions.tools`, and `registerTools` wires the dispatch for you:
+
+```ts
+import { createWeather, createDateTime, registerTools } from '@jambonz/tools';
+
+const weather = createWeather();
+const datetime = createDateTime();
+
+// in the agent verb:
+//   llmOptions: { tools: [weather.schema, datetime.schema] },
+//   toolHook: '/tools',
+registerTools(session, '/tools', [weather, datetime]);
+```
+
+(Python apps hand-roll the equivalent with the dispatch handler shown above — the package is Node-only.) Local tools, pre-built tools, MCP tools, and the built-in handoff/hangup tools all coexist in the same tool list; the agent routes each call to the right executor by name.
+
+### Covering tool latency with a filler
+
+A three-second database lookup is an awkward silence on a phone call. `toolFiller` covers it:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+toolFiller: {
+  type: 'backchannel',
+  startDelaySecs: 2,
+  style: 'casual',
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+toolFiller={
+    "type": "backchannel",
+    "startDelaySecs": 2,
+    "style": "casual",
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+- `type: "audio"` loops an audio file (`url`) — think hold music or keyboard clicks.
+- `type: "backchannel"` speaks short LLM-generated phrases ("Let me pull that up…"), pre-warmed at agent startup in the TTS voice so there's no synthesis delay. `style` gives the model a tone hint ("casual", "professional and patient").
+- `startDelaySecs` (default 2) is how long to wait before the filler kicks in — fast tools finish before the caller notices any gap.
+- `escalationSecs` (default 10) is when a backchannel filler escalates to a longer explanatory line, for tools that run 10+ seconds.
+
+Set `toolFiller: false` to disable it entirely.
+
+---
+
+## 14. Calling MCP servers
+
+Beyond locally-defined tools, the agent can connect to remote **MCP (Model Context Protocol)** servers and expose *their* tools to the model — no glue code, no redeploying your app when the toolset changes.
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+mcpServers: [
+  { url: 'https://tools.example.com/mcp/sse',
+    auth: { Authorization: 'Bearer TOKEN' } },
+]
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+mcpServers=[
+    {"url": "https://tools.example.com/mcp/sse",
+     "auth": {"Authorization": "Bearer TOKEN"}},
+]
+```
+
+</Fragment>
+</CodeTabs>
+
+At agent startup, jambonz connects to each server (auto-detecting SSE vs. streamable-HTTP transport), discovers its tools, and **merges them into the same tool list** as your local tools, the handoff tool, and the hangup tool. From the model's perspective it's one flat toolset. When the model calls an MCP tool, the agent routes it to the right MCP client, applies a per-call timeout (10 s by default), and — if the connection has dropped — reconnects once and retries before giving up. Connections are cleanly torn down when the call ends.
+
+This is the clean way to give an agent access to a shared, independently-deployed capability (a booking system, a knowledge base, an internal API gateway) that many agents use.
+
+---
+
+## 15. Built-in tools: handoff and hangup
+
+Two behaviors are common enough that jambonz ships them as built-in tools you enable declaratively — you don't have to define the schema or handle them in your `toolHook`.
+
+### The handoff tool (`transfer_to_human`)
+
+Set a `handoff` config and the agent injects a `transfer_to_human` tool the model can call to escalate to a person:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+handoff: {
+  mode: 'warm',
+  target: '+15125551212',
+  brief: 'auto',
+}
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+handoff={
+    "mode": "warm",
+    "target": "+15125551212",
+    "brief": "auto",
+}
+```
+
+</Fragment>
+</CodeTabs>
+
+The injected tool always takes a `reason`, and — unless `brief: "none"` — a required `summary` argument, with a description that tells the model to brief the human ("who the caller is, what they want, and anything verified or attempted"). You can rename the tool (`toolName`) and override its description (`toolDescription`) — useful when you want several differently-targeted transfer tools or a description tuned to your escalation policy.
+
+The config controls the whole choreography:
+
+- **`mode`** — `blind` (send the caller and step away) or `warm` (the bot stays on, reaches the human first, and speaks the briefing before connecting the caller).
+- **`target`** — where to send the call: a phone number, SIP URI, registered user, or queue.
+- **`brief`** — what the human hears before the caller is connected: `'auto'` (default — the LLM writes the summary from the tool's `summary` argument), `'none'` (no spoken brief), or `{ template: '...' }` to give the LLM guidance on what the summary should cover ("always include the account number and what was already tried").
+- **`briefSynthesizer`** — optionally speak the brief in a different voice/vendor than the caller-facing one.
+- Plus the standard transfer options — `callerId`, `timeout`, `confirm`, `amd` (answering-machine detection on the human leg), and a `disposition`/`eventHook` for transfer-level events.
+
+When the model calls the tool, the agent:
+
+1. **suspends itself** — detaches its STT/LLM/TTS handlers and stops any in-flight generation (the caller hears the transfer proceeding, not the bot),
+2. **runs the transfer**, merging your `handoff` config with the model's tool arguments (the `reason` and `summary` it supplied),
+3. **branches on the outcome**:
+   - **Bridged** — caller and human are connected; the agent completes with reason `transferred`.
+   - **Ended** — the transfer leg terminated the call (e.g. went to the human's voicemail and finished there); the agent completes with reason `transfer_ended`.
+   - **Returned** — the human didn't answer, or hung up and sent the caller back. The agent **re-attaches its handlers and resumes the conversation**, firing a `transfer.returned` event on your `eventHook`. Your app should react to that event — typically with a `generate_reply` (§16) so the bot acknowledges what happened ("I wasn't able to reach a specialist — let me see what else I can do") instead of resuming in silence.
+
+That last branch is the one most home-grown transfer implementations get wrong: the failure path. Here, a failed escalation lands the caller back with a bot that still has the full conversation.
+
+### The hangup tool
+
+Similarly, a `hangup` config injects a `hangup` tool so the model can end the call itself when the conversation is genuinely over — with an optional reason. Both built-ins are intercepted *before* MCP/`toolHook` routing, so they never leak to your webhook.
+
+---
+
+## 16. Mid-call control
+
+An agent isn't frozen once it starts. Your application — or any external system, via the REST API — can steer it live, and the state machine applies each update at the next safe moment. Four update types:
+
+- **`update_instructions`** — hot-swap the system prompt (TTS guidance is re-appended automatically). Use it when the conversation changes phase: "You are now a billing specialist…"
+- **`inject_context`** — append messages to the conversation history, e.g. CRM data fetched after the call started, or "the caller just completed payment on the web," so the model knows without the caller saying it.
+- **`update_tools`** — replace the tool set; takes effect on the next LLM turn.
+- **`generate_reply`** — make the agent speak *now* from a synthetic input, optionally with one-shot `instructions`. If the agent is mid-response, the request queues until the turn completes — or pass `interrupt: true` to cut the current response off and speak immediately (supervisor overrides, urgent events).
+
+From inside your app, over the session's WebSocket:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+// the conversation moved to billing — change persona and inject account data
+session.updateAgent({
+  type: 'update_instructions',
+  instructions: 'You are now a billing support agent for Acme. Help with invoice questions.',
+});
+
+session.updateAgent({
+  type: 'inject_context',
+  messages: [
+    { role: 'system', content: 'Account #12345: Gold tier, 3 open tickets, last invoice $214.' },
+  ],
+});
+
+// an external event fires — have the agent speak, interrupting if needed
+session.updateAgent({
+  type: 'generate_reply',
+  user_input: 'The customer\'s payment just went through.',
+  instructions: 'Confirm the payment cheerfully and ask if anything else is needed.',
+  interrupt: true,
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+# the conversation moved to billing — change persona and inject account data
+await session.update_agent({
+    "type": "update_instructions",
+    "instructions": "You are now a billing support agent for Acme. Help with invoice questions.",
+})
+
+await session.update_agent({
+    "type": "inject_context",
+    "messages": [
+        {"role": "system", "content": "Account #12345: Gold tier, 3 open tickets, last invoice $214."},
+    ],
+})
+
+# an external event fires — have the agent speak, interrupting if needed
+await session.update_agent({
+    "type": "generate_reply",
+    "user_input": "The customer's payment just went through.",
+    "instructions": "Confirm the payment cheerfully and ask if anything else is needed.",
+    "interrupt": True,
+})
+```
+
+</Fragment>
+</CodeTabs>
+
+The same updates work from *outside* the call, through the REST API — any backend that knows the `call_sid` can steer a live agent:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+await client.calls.updateAgent(callSid, {
+  type: 'generate_reply',
+  user_input: 'The callback the customer requested is now available.',
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+await client.calls.update_agent(call_sid, {
+    "type": "generate_reply",
+    "user_input": "The callback the customer requested is now available.",
+})
+```
+
+</Fragment>
+</CodeTabs>
+
+Between mid-call updates, MCP servers, and tool calling, the agent stops being a closed loop: it's a conversational process your whole system can talk to.
+
+---
+
+## 17. Observability
+
+You get observability at two levels: in your application, through the `eventHook`; and in the jambonz portal, where **Recent Calls** shows every agent conversation as a turn-by-turn session timeline — transcripts, the assistant's responses, tool calls, interruptions, and per-turn latency, with the call recording playing back in sync as the timeline highlights each turn.
+
+{/* SCREENSHOT: portal → Recent Calls → an agent call's session timeline view, showing a few conversation turns with transcripts and latency chips, recording player at top */}
+
+### In your application: the eventHook
+
+Your `eventHook` receives real-time events throughout the conversation: `user_transcript` (recognized caller speech), `llm_response` (the assistant's reply text), `user_interruption` (a barge-in was confirmed), and `turn_end` (the end-of-turn summary). The `turn_end` payload is the one you'll build dashboards on — it carries the transcript, the response (trimmed to what was actually spoken if the turn was interrupted), and a `latency` object that maps exactly onto the timeline from §3:
+
+```json
+{
+  "type": "turn_end",
+  "transcript": "what's the balance on my account",
+  "response": "Your current balance is forty-two dollars and fifty cents. Anything else?",
+  "interrupted": false,
+  "latency": {
+    "transcriber_latency": 180,
+    "turn_detection_latency": 40,
+    "voice_latency": 95,
+    "preflight": { "result": "hit", "tokens": 42 }
+  }
+}
+```
+
+- **`transcriber_latency`** — caller stopped talking → final transcript (ms)
+- **`turn_detection_latency`** — extra wait after the transcript for the end-of-turn decision; absent when EOT arrived with or before the transcript
+- **`model_latency`** — LLM time-to-first-token; **absent on a preflight hit**, as in the example above — the response was generated while turn detection was still deciding, so there was no LLM wait on the critical path. That missing field *is* the early-generation win, visible in your telemetry.
+- **`voice_latency`** — first text sent to TTS → first audio back
+- **`preflight`** — `result` (`hit` / `miss` / `pending`) and, on a hit, the buffered token count; present only when early generation is on
+
+Sum the fields and you have the turn's voice-to-voice latency (plus the STT endpointing window); trend them per segment and you know exactly which vendor or setting to revisit.
+
+Beyond per-turn metrics, the agent keeps session-level counters — barge-in attempts/confirmations/reverts, preflight hits/misses/cancels, no-response timeouts — which are exactly the numbers you use to tune the thresholds in §7 and §9. If barge-ins revert too often, your `minSpeechDuration` is too low or you want interrupt prediction. If preflight misses dominate, your STT is producing unstable interims. The instrumentation tells you which knob to turn. And since every turn is also an OpenTelemetry span, the same timings land in your tracing backend (Jaeger, Zipkin, OTLP) alongside the rest of the platform's traces.
+
+{/* SCREENSHOT: an expanded turn in the session view showing the latency breakdown — ideally a turn with a preflight hit so the early-generation win is visible */}
+
+### Take it with you: the session bundle
+
+Here's the part that changes how you debug. From Recent Calls, the **⋮ menu on any call → "Download recording + transcript"** gives you a zip bundle (also available over the REST API):
+
+```
+<call_sid>.zip
+└── <call_sid>/
+    ├── recording.mp3    # the call audio
+    ├── session.json     # the full session: every turn, transcript, event, latency metric
+    └── index.html       # a self-contained session viewer with the data embedded
+```
+
+{/* SCREENSHOT: the kebab (⋮) menu open on a Recent Calls row, showing "Download recording + transcript" */}
+
+That `index.html` is the entire session viewer in one file — no server, no login, no dependencies. Whoever you send it to double-clicks it and gets the same synchronized timeline-plus-audio view you had in the portal.
+
+{/* SCREENSHOT: the bundle's index.html open in a plain browser window (no portal chrome), timeline + audio player visible — makes the "self-contained" point instantly */}
+
+The bundle being **portable** is the point:
+
+- **Attach it to a support ticket.** Instead of "the bot keeps cutting people off, here's a call SID," your vendor or platform team gets the recording, the full turn-by-turn data, and a viewer to explore it — one file, complete context.
+- **Send it to a colleague.** The person who tunes the prompts doesn't need portal access to review how calls are going.
+- **Hand it to an AI agent.** This is the one that pays off daily: `session.json` is machine-readable, and its latency fields are exactly the ones defined in this post. Unzip a bundle next to Claude Code (or any coding agent) and ask *"why did the caller talk over the bot on turn 5?"* or *"review these latencies and suggest config changes"* — the agent reads the turns, sees `turn_detection_latency` averaging 800 ms, and tells you to move to Flux or Krisp. Your voice agent's telemetry becomes something another AI can reason about, and tuning stops being guesswork even for people who've never read this post.
+
+{/* SCREENSHOT: a terminal with Claude Code (or similar) pointed at an unzipped bundle, answering a question like "why was turn 5 slow?" with a concrete config suggestion */}
+
+---
+
+## 18. When the agent ends
+
+The agent verb runs until something ends it, and then your application decides what happens next. The `actionHook` fires with a `completion_reason`:
+
+- **`normal`** — the conversation ran its course (or the verb was killed by new instructions).
+- **`hangup`** — the model called the built-in hangup tool.
+- **`transferred`** — the handoff tool bridged the caller to a human.
+- **`transfer_ended`** — the handoff leg ended the call (e.g. terminated in voicemail).
+
+Whatever verbs you return from the actionHook run next — a goodbye, a survey `gather`, an `enqueue` into a human queue, or a plain hangup:
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+session.on('/agent-complete', (evt) => {
+  console.log(`agent ended: ${evt.completion_reason}`);
+  session
+    .say({ text: 'Thanks for calling Acme. Goodbye!' })
+    .hangup()
+    .reply();
+});
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+async def on_complete(evt):
+    print(f"agent ended: {evt.get('completion_reason')}")
+    session.say(text="Thanks for calling Acme. Goodbye!")
+    session.hangup()
+    await session.reply()
+
+session.on("/agent-complete", on_complete)
+```
+
+</Fragment>
+</CodeTabs>
+
+And the agent composes with the rest of jambonz: it's just a verb. Play a compliance announcement with `say` before it starts, record the call, or follow it with any other call flow — the agent is one stage in the session, not the whole session.
+
+---
+
+## 19. Putting it together
+
+Here's a fully-specified agent that uses most of what we've covered — a low-latency configuration built around Krisp: acoustic turn-taking, interrupt prediction, early generation, noise isolation, a tool webhook, and human handoff. (Interrupt prediction and Krisp turn detection ride the same Krisp session, so they pair naturally.)
+
+<CodeTabs>
+<Fragment slot="ts">
+
+```ts
+session
+  .agent({
+    greeting: true,
+    llm: {
+      vendor: 'groq',
+      model: 'llama-3.3-70b-versatile',
+      llmOptions: {
+        systemPrompt: 'You are a support agent for Acme. Be concise and warm.',
+        temperature: 0.4,
+        maxTokens: 300,
+        reasoningEffort: 'minimal',
+        tools: [{
+          name: 'lookup_order',
+          description: 'Look up an order by ID',
+          parameters: {
+            type: 'object',
+            properties: { order_id: { type: 'string' } },
+            required: ['order_id'],
+          },
+        }],
+      },
+    },
+    stt: { vendor: 'deepgram', language: 'en-US' },
+    tts: {
+      vendor: 'elevenlabs',
+      voice: '21m00Tcm4TlvDq8ikWAM',
+      options: { model_id: 'eleven_turbo_v2_5' },
+    },
+    turnDetection: 'krisp',
+    earlyGeneration: true,
+    bargeIn: { strategy: 'interruptPrediction', threshold: 0.5 },
+    noiseIsolation: 'krisp',
+    toolHook: '/tools',
+    toolFiller: { type: 'backchannel', startDelaySecs: 2 },
+    handoff: { mode: 'warm', target: '+15125551212', brief: 'auto' },
+    hangup: {},
+    eventHook: '/agent-events',
+    actionHook: '/agent-complete',
+  })
+  .send();
+```
+
+</Fragment>
+<Fragment slot="py">
+
+```python
+session.agent(
+    greeting=True,
+    llm={
+        "vendor": "groq",
+        "model": "llama-3.3-70b-versatile",
+        "llmOptions": {
+            "systemPrompt": "You are a support agent for Acme. Be concise and warm.",
+            "temperature": 0.4,
+            "maxTokens": 300,
+            "reasoningEffort": "minimal",
+            "tools": [{
+                "name": "lookup_order",
+                "description": "Look up an order by ID",
+                "parameters": {
+                    "type": "object",
+                    "properties": {"order_id": {"type": "string"}},
+                    "required": ["order_id"],
+                },
+            }],
+        },
+    },
+    stt={"vendor": "deepgram", "language": "en-US"},
+    tts={
+        "vendor": "elevenlabs",
+        "voice": "21m00Tcm4TlvDq8ikWAM",
+        "options": {"model_id": "eleven_turbo_v2_5"},
+    },
+    turnDetection="krisp",
+    earlyGeneration=True,
+    bargeIn={"strategy": "interruptPrediction", "threshold": 0.5},
+    noiseIsolation="krisp",
+    toolHook="/tools",
+    toolFiller={"type": "backchannel", "startDelaySecs": 2},
+    handoff={"mode": "warm", "target": "+15125551212", "brief": "auto"},
+    hangup={},
+    eventHook="/agent-events",
+    actionHook="/agent-complete",
+)
+await session.send()
+```
+
+</Fragment>
+</CodeTabs>
+
+> **Krisp requires an API key** on self-hosted jambonz — that covers turn detection, interrupt prediction, and Krisp noise isolation. RNNoise noise isolation is the key-free alternative.
+
+## 20. A tuning cheat-sheet
+
+| Symptom | Likely cause | Knob |
+|---|---|---|
+| Bot cuts callers off mid-sentence | Turn ending too early | Raise Krisp `threshold`; rely on native STT turn-taking |
+| Bot is slow to reply | LLM TTFT stacked on turn detection | Turn on `earlyGeneration` (Krisp) or use Flux; pick a faster model (e.g. Groq); set `reasoningEffort: 'minimal'` |
+| Bot stops for "uh-huh" | VAD can't tell backchannels from interruptions | `bargeIn.strategy: 'interruptPrediction'` |
+| Bot stops for coughs/noise | Debounce too short | Raise `bargeIn.minSpeechDuration`; add `noiseIsolation` |
+| Bot ignores real interruptions | Barge-in disabled or debounce too long | Check `bargeIn.enable`; lower `minSpeechDuration` |
+| `earlyGeneration` seems to do nothing on Flux | No eager EOT signal | Set `stt.deepgramOptions.eagerEotThreshold` |
+| Long calls get expensive / lose the plot | Unbounded history | Set `JAMBONES_AGENT_SUMMARIZE_TURNS` on the feature-server |
+| Awkward silence during lookups | No latency cover | Add `toolFiller` |
+| Spanish caller gets an English voice | No language adaptation | `autoLockLanguage` + `languageConfig` with a multilingual recognizer |
+| Caller goes quiet, call just hangs | Bot never re-engages | Tune `noResponseTimeout` (default 12 s; `0` disables) |
+| Bot resumes in silence after failed transfer | `transfer.returned` unhandled | On that event, send a `generate_reply` |
+
+---
+
+## Wrapping up
+
+The cascaded `agent` verb is a lot of machinery, but the mental model is simple: it's a pipeline — *is there speech? what did they say? are they done? respond, and stop if they interrupt* — with an explicit state machine you can tune at every stage, and a per-turn latency report that tells you exactly which stage to tune. Mix the STT, LLM, and TTS vendors that fit your latency and quality budget; let native STT turn-taking or Krisp decide when the caller is done; use interrupt prediction to stop for real interruptions and ignore backchannels; and hide LLM latency with early generation. Wire in tools, MCP servers, mid-call control, and human handoff — with a graceful path for every way a call can end — and you have a production voice agent, all from one verb and a handful of options.
