@@ -4,7 +4,6 @@ date: 2026-07-06
 description: "jambonz v11 replaces FreeSWITCH with a custom media server, more than doubling capacity and improving voice AI platform performance."
 author: "Dave Horton"
 tags: ["jambonz-v11", "voice-ai", "media-server", "freeswitch", "scalability"]
-draft: true
 faq:
   - question: "Why did jambonz remove FreeSWITCH?"
     answer: "FreeSWITCH is a general-purpose media server that jambonz only used a fraction of, and the unused overhead limited how far a single cluster could scale. Removing it let us build something scoped to exactly what jambonz needs."
