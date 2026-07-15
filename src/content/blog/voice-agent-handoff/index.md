@@ -163,6 +163,8 @@ session
 No conference verb, no REST `createCall`, no second WebSocket endpoint — jambonz
 joins the caller into the three-way and lets the agent introduce them.
 
+> For details on each of the handoff properties [please review our docs](https://docs.jambonz.org/verbs/verbs/agent#transfer-to-human-handoff).
+
 ## How jambonz Compares to Other Voice AI Platforms
 
 | Feature | jambonz | Other voice AI platforms |
@@ -180,10 +182,10 @@ In jambonz it's one property.
 ## Getting Started with jambonz
 
 Handoff is available now in jambonz v11. See the [voice agent
-documentation][docs] for how to configure blind, warm, and conferenced transfer
-on your agent, and the [transfer-apps examples][examples] for complete,
+documentation]([)](https://docs.jambonz.org/verbs/verbs/agent) for how to configure blind, warm, and conferenced transfer
+on your agent, and the [transfer-apps examples](https://github.com/jambonz/v10-examples/tree/main/examples/transfer-apps) for complete,
 deployable apps for all three.
 
-[sdk]: https://www.npmjs.com/package/@jambonz/sdk
+[sdk]: https://docs.jambonz.org/sdks/node-sdk
 [examples]: https://github.com/jambonz/v10-examples/tree/main/examples/transfer-apps
 [docs]: https://docs.jambonz.org
