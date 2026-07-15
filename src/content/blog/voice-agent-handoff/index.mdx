@@ -1,7 +1,7 @@
 ---
 title: "Voice Agent Handoff Made Simple in jambonz"
 date: 2026-07-15
-description: "Voice agent handoff in jambonz — blind transfer, warm transfer with a private briefing, and a live three-way handoff, built into the voice agent with no custom transfer code."
+description: "Blind transfer, warm transfer with a private briefing, and a conferenced three-way handoff — all built into the jambonz voice agent, with no custom transfer code."
 author: "Dave Horton"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
 draft: false
@@ -39,7 +39,7 @@ exposes this as a `WarmTransferTask` built from `CreateSIPParticipant` and
 maintain.
 
 jambonz collapses that into a single declarative `handoff` block on the `agent`
-verb (if you are building a cascaded voice pipeline) or the 's2s' verb if you are building a 
+verb (if you are building a cascaded voice pipeline) or the `s2s` verb if you are building a 
 speech-to-speech voice agent. 
 
 You describe the outcome you want; jambonz injects a `transfer_to_human`
@@ -56,7 +56,7 @@ injected tool once it understands what the caller needs; and
 
 All three are the same `agent`(or `s2s`) verb with a different `handoff` block. The full,
 runnable versions of each — built on [`@jambonz/sdk`][sdk] (≥ 0.8.3) — live in
-the [transfer-apps examples][examples].
+the [transfer-apps examples][https://github.com/jambonz/v10-examples/tree/main/examples/transfer-apps].
 
 ### 1. Blind transfer
 
