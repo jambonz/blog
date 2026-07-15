@@ -1,7 +1,7 @@
 ---
 title: "Voice Agent Handoff Made Simple in jambonz"
 date: 2026-07-15
-description: "Voice agent handoff in jambonz — blind transfer, warm transfer with a private briefing, and a live three-way handoff, built into the voice agent with no custom transfer code."
+description: "Voice agent handoff in jambonz — blind transfer, warm transfer with a private briefing, and a live three-way handoff, no custom transfer code required."
 author: "Dave Horton"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
 draft: false
