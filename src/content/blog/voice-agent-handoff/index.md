@@ -39,7 +39,7 @@ exposes this as a `WarmTransferTask` built from `CreateSIPParticipant` and
 maintain.
 
 jambonz collapses that into a single declarative `handoff` block on the `agent`
-verb (if you are building a cascaded voice pipeline) or the 's2s' verb if you are building a 
+verb (if you are building a cascaded voice pipeline) or the `s2s` verb if you are building a 
 speech-to-speech voice agent. 
 
 You describe the outcome you want; jambonz injects a `transfer_to_human`
