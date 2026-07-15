@@ -4,7 +4,7 @@ date: 2026-07-15
 description: "Blind transfer, warm transfer with a private briefing, and a conferenced three-way handoff — all built into the jambonz voice agent, with no custom transfer code."
 author: "Dave Horton"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
-draft: true
+draft: false
 faq:
   - question: "What is the difference between blind (cold) transfer and warm transfer in voice AI?"
     answer: "A blind transfer connects the caller straight to the destination with no briefing — fastest, best for simple routing. A warm transfer puts the caller on hold while the voice agent reaches the human first and briefs them privately, so the human has context before the caller is connected."
@@ -18,10 +18,15 @@ faq:
     answer: "Each outcome (no answer, busy, declined, or failure) has a configurable disposition: return the caller to the voice agent, send them to voicemail, or hang up. By default the caller is returned to the agent, which resumes the conversation."
 ---
 
-Every production voice agent eventually needs to bring in a human. In jambonz
-v11, the three ways to do that — **blind transfer**, **warm transfer**, and a
-**conferenced three-way handoff** — are configured directly on the voice agent.
-There's no transfer workflow to build.
+Every production voice agent eventually needs to bring in a human, and there are three possible ways to do that: 
+- **Blind transfer** — the caller is connected directly to the human with no briefing.
+- **Warm transfer** — the caller is put on hold while the human is briefed privately, then connected.
+- **Three-way warm transfer** — the human is brought into the call while the caller stays on the line, so the caller hears the introduction.
+
+jambonz has always had best-in-class support for telephony and all three methods have been supported for a long time.
+However, prior to v11, orchestrating a handoff required building a custom transfer workflow, and it could get a bit complicated.
+
+So in v11, we've introduced a simple declarative approach to defining the handoff approach you want for your voice agent.
 
 ## Why Handoff Usually Means Writing a Workflow
 
@@ -34,17 +39,22 @@ exposes this as a `WarmTransferTask` built from `CreateSIPParticipant` and
 maintain.
 
 jambonz collapses that into a single declarative `handoff` block on the `agent`
-verb. You describe the outcome you want; jambonz injects a `transfer_to_human`
+verb (if you are building a cascaded voice pipeline) or the 's2s' verb if you are building a 
+speech-to-speech voice agent. 
+
+You describe the outcome you want; jambonz injects a `transfer_to_human`
 tool for the model and runs the entire choreography — dialing, screening,
 briefing, bridging, and fallback — when the model calls it.
 
-One clarification worth making up front: **you** configure *which* kind of
-handoff happens; the **LLM** decides *when* to trigger it, by calling the
-injected tool once it understands what the caller needs.
+The division of responsibilities is clear: 
+- **you** declare *which* kind of handoff happens; 
+- the **LLM** decides *when* to trigger it, by calling the
+injected tool once it understands what the caller needs; and
+- **jambonz** handles the mechanics of the transfer — dialing, briefing, bridging, and fallback.
 
 ## The Three Handoff Types in jambonz v11
 
-All three are the same `agent` verb with a different `handoff` block. The full,
+All three are the same `agent`(or `s2s`) verb with a different `handoff` block. The full,
 runnable versions of each — built on [`@jambonz/sdk`][sdk] (≥ 0.8.3) — live in
 the [transfer-apps examples][examples].
 
@@ -67,8 +77,7 @@ session
     turnDetection: 'stt',
     handoff: {
       mode: 'blind',
-      blindMethod: 'dial',                       // 'refer' (SIP REFER) or 'dial' (bridged call)
-      target: [{ type: 'phone', number: target }],
+      blindMethod: 'refer',                       // 'refer' (SIP REFER) or 'dial' (bridged call)
       callerId,
       disposition: { onNoAnswer: 'return', onBusy: 'return', onFailure: 'return' },
       actionHook: '/transfer-done',
@@ -87,21 +96,35 @@ to accept — and only then is the caller connected. Just the `handoff` block (t
 rest of the agent is identical):
 
 ```ts
-handoff: {
-  mode: 'warm',
-  callerPresent: false,                          // caller is parked; doesn't hear the brief
-  target: [{ type: 'phone', number: target }],
-  callerId: '+15085550101',                      // an owned DID, or the carrier rejects the leg
-  brief: {
-    template:
-      'In one sentence, tell the specialist why the caller is calling, then say ' +
-      'exactly: "Press one to connect, or hang up to decline."',
-  },
-  confirm: { prompt: 'Press one to connect.', digit: '1' },
-  onHoldHook: '/on-hold',                        // what the parked caller hears during the brief
-  disposition: { onNoAnswer: 'return', onBusy: 'return', onDecline: 'return', onFailure: 'return' },
-  actionHook: '/transfer-done',
-},
+session
+  .agent({
+    stt: { vendor: 'deepgram', language: 'en-US' },
+    tts: { vendor: 'cartesia', voice: ttsVoice },
+    llm: {
+      vendor: 'openai',
+      model: 'gpt-4.1-mini',
+      llmOptions: { systemPrompt },
+    },
+    turnDetection: 'stt',
+    handoff: {
+      mode: 'warm',
+      callerPresent: false,        // caller is parked; doesn't hear the brief
+      target: [{ type: 'phone', number: target }],
+      callerId: '+15085550101',    // optional: caller ID on outbound call to human agent
+      brief: {
+        template:
+          'In one sentence, tell the specialist why the caller is calling, then say ' +
+          'exactly: "Press one to connect, or hang up to decline."',
+      },
+      confirm: { prompt: 'Press one to connect.', digit: '1' },
+      onHoldHook: '/on-hold',                        // what the parked caller hears during the brief
+      disposition: { onNoAnswer: 'return', onBusy: 'return', onDecline: 'return', onFailure: 'return' },
+      actionHook: '/transfer-done',
+    },
+    eventHook: '/agent-event',
+    actionHook: '/agent-done',
+  })
+  .send();
 ```
 
 ### 3. Conferenced (three-way) handoff
@@ -112,15 +135,29 @@ three-way conversation until the agent drops off. The only difference from a war
 transfer is a single property — `callerPresent: true`:
 
 ```ts
-handoff: {
-  mode: 'warm',
-  callerPresent: true,                           // caller joins the three-way and hears the brief
-  target: [{ type: 'phone', number: target }],
-  callerId,                                      // an owned DID, or the carrier rejects the leg
-  brief: 'auto',                                 // let the LLM write the introduction
-  disposition: { onNoAnswer: 'return', onBusy: 'return', onDecline: 'return', onFailure: 'return' },
-  actionHook: '/transfer-done',
-},
+session
+  .agent({
+    stt: { vendor: 'deepgram', language: 'en-US' },
+    tts: { vendor: 'cartesia', voice: ttsVoice },
+    llm: {
+      vendor: 'openai',
+      model: 'gpt-4.1-mini',
+      llmOptions: { systemPrompt },
+    },
+    turnDetection: 'stt',
+    handoff: {
+      mode: 'warm',
+      callerPresent: true,  // caller joins the three-way and hears the brief
+      target: [{ type: 'phone', number: target }],
+      callerId,                                      
+      brief: 'auto',        // let the LLM create the introduction
+      disposition: { onNoAnswer: 'return', onBusy: 'return', onDecline: 'return', onFailure: 'return' },
+      actionHook: '/transfer-done',
+    },
+    eventHook: '/agent-event',
+    actionHook: '/agent-done',
+  })
+  .send();
 ```
 
 No conference verb, no REST `createCall`, no second WebSocket endpoint — jambonz
