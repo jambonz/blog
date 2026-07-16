@@ -1,7 +1,7 @@
 ---
 title: "Voice Agent Handoff Made Simple in jambonz"
-date: 2026-07-15
-description: "Voice agent handoff in jambonz — blind transfer, warm transfer with a private briefing, and a live three-way handoff, no custom transfer code required."
+date: 2026-07-16
+description: "jambonz v11 adds built-in blind, warm, and conferenced handoff for voice agents — declarative, no custom transfer workflow to build."
 author: "Dave Horton"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
 faq:
@@ -192,7 +192,7 @@ In jambonz it's one property.
 ## Getting Started with jambonz
 
 Handoff is available now in jambonz v11. See the [voice agent
-documentation]([)](https://docs.jambonz.org/verbs/verbs/agent) for how to configure blind, warm, and conferenced transfer
+documentation](https://docs.jambonz.org/verbs/verbs/agent) for how to configure blind, warm, and conferenced transfer
 on your agent, and the [transfer-apps examples](https://github.com/jambonz/v10-examples/tree/main/examples/transfer-apps) for complete,
 deployable apps for all three.
 
