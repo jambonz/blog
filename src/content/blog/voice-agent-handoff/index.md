@@ -25,7 +25,7 @@ Every production voice agent eventually needs to bring in a human, and there are
 - **Warm transfer.** The caller is put on hold while the human is briefed privately, then connected.
 - **Three-way warm transfer.** The human is brought into the call while the caller stays on the line, so the caller hears the introduction.
 
-jambonz has always had best-in-class support for telephony and all three methods have been supported for a long time.
+[jambonz](https://jambonz.org/) has always had best-in-class support for telephony and all three methods have been supported for a long time.
 However, prior to v11, orchestrating a handoff required building a custom transfer workflow, and it could get a bit complicated.
 
 So in v11, we've introduced a simple declarative approach to defining the handoff approach you want for your voice agent.
@@ -44,7 +44,7 @@ maintain.
 
 jambonz collapses that into a single declarative `handoff` block on the `agent`
 verb (if you are building a cascaded voice pipeline) or the `s2s` verb if you are building a 
-speech-to-speech voice agent. 
+[speech-to-speech voice agent](https://docs.jambonz.org/verbs/verbs/agent). 
 
 You describe the outcome you want; jambonz injects a `transfer_to_human`
 tool for the model and runs the entire choreography when the model calls it:
@@ -92,7 +92,7 @@ session
   .send();
 ```
 
-### 2. Warm Transfer (private briefing)
+### 2. Warm Transfer (Private Briefing)
 
 The caller is parked on hold while the voice agent calls the human and briefs
 them privately. The human is screened with a `confirm` gate (they press a digit
@@ -131,7 +131,7 @@ session
   .send();
 ```
 
-### 3. Conferenced (three-way) handoff
+### 3. Conferenced (Three-way) Handoff
 
 The voice agent brings the human onto the call while the caller stays on the
 line, so the caller hears the introduction happen. The call continues as a
@@ -216,7 +216,7 @@ session
 }
 ```
 
-## How jambonz Compares to Other Voice AI Platforms
+## How Does jambonz Compare to Other Voice AI Platforms?
 
 | Feature | jambonz | Other voice AI platforms |
 |---|---|---|
