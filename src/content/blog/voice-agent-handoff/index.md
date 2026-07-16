@@ -4,7 +4,6 @@ date: 2026-07-15
 description: "Voice agent handoff in jambonz — blind transfer, warm transfer with a private briefing, and a live three-way handoff, no custom transfer code required."
 author: "Dave Horton"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
-draft: false
 faq:
   - question: "What is the difference between blind (cold) transfer and warm transfer in voice AI?"
     answer: "A blind transfer connects the caller straight to the destination with no briefing — fastest, best for simple routing. A warm transfer puts the caller on hold while the voice agent reaches the human first and briefs them privately, so the human has context before the caller is connected."
@@ -16,6 +15,8 @@ faq:
     answer: "No — you configure the handoff type (blind, warm, or conferenced) on the agent. The LLM only decides when to hand off, by calling the injected transfer_to_human tool once it understands the caller's need."
   - question: "What happens if the human doesn't answer or declines the transfer?"
     answer: "Each outcome (no answer, busy, declined, or failure) has a configurable disposition: return the caller to the voice agent, send them to voicemail, or hang up. By default the caller is returned to the agent, which resumes the conversation."
+  - question: "What does the transfer verb do in jambonz?"
+    answer: "The transfer verb provides a general, simple and declarative means for performing a call transfer to another party from within any jambonz application.  When using the agent or s2s verbs the transfer function is baked into the 'handoff' property, in all other cases you can use the transfer verb."
 ---
 
 Every production voice agent eventually needs to bring in a human, and there are three possible ways to do that: 
@@ -27,6 +28,8 @@ jambonz has always had best-in-class support for telephony and all three methods
 However, prior to v11, orchestrating a handoff required building a custom transfer workflow, and it could get a bit complicated.
 
 So in v11, we've introduced a simple declarative approach to defining the handoff approach you want for your voice agent.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5cdNry2D8rg?si=CkZMON-O0Mbda9MU" title="Demonstrating ease of use of agent handoff in jambonz version 11" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## Why Handoff Usually Means Writing a Workflow
 
@@ -51,8 +54,6 @@ The division of responsibilities is clear:
 - the **LLM** decides *when* to trigger it, by calling the
 injected tool once it understands what the caller needs; and
 - **jambonz** handles the mechanics of the transfer — dialing, briefing, bridging, and fallback.
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/5cdNry2D8rg?si=CkZMON-O0Mbda9MU" title="Demonstrating ease of use of agent handoff in jambonz version 11" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## The Three Handoff Types in jambonz v11
 
