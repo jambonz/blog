@@ -52,6 +52,8 @@ The division of responsibilities is clear:
 injected tool once it understands what the caller needs; and
 - **jambonz** handles the mechanics of the transfer — dialing, briefing, bridging, and fallback.
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/5cdNry2D8rg?si=CkZMON-O0Mbda9MU" title="Demonstrating ease of use of agent handoff in jambonz version 11" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
 ## The Three Handoff Types in jambonz v11
 
 All three are the same `agent`(or `s2s`) verb with a different `handoff` block. The full,
@@ -74,7 +76,7 @@ session
       model: 'gpt-4.1-mini',
       llmOptions: { systemPrompt },
     },
-    turnDetection: 'stt',
+    turnDetection: 'krisp',
     handoff: {
       mode: 'blind',
       blindMethod: 'refer',                       // 'refer' (SIP REFER) or 'dial' (bridged call)
@@ -105,7 +107,7 @@ session
       model: 'gpt-4.1-mini',
       llmOptions: { systemPrompt },
     },
-    turnDetection: 'stt',
+    turnDetection: 'krisp',
     handoff: {
       mode: 'warm',
       callerPresent: false,        // caller is parked; doesn't hear the brief
@@ -144,7 +146,7 @@ session
       model: 'gpt-4.1-mini',
       llmOptions: { systemPrompt },
     },
-    turnDetection: 'stt',
+    turnDetection: 'krisp',
     handoff: {
       mode: 'warm',
       callerPresent: true,  // caller joins the three-way and hears the brief
@@ -160,10 +162,17 @@ session
   .send();
 ```
 
-No conference verb, no REST `createCall`, no second WebSocket endpoint — jambonz
-joins the caller into the three-way and lets the agent introduce them.
+No conference verb, no REST api call to create a second call leg, no second WebSocket endpoint — jambonz
+joins the caller into the three-way and lets the voice agent introduce them before dropping out of the conference.
 
 > For details on each of the handoff properties [please review our docs](https://docs.jambonz.org/verbs/verbs/agent#transfer-to-human-handoff).
+
+## Call transfer when not building a voice agent
+
+Call transfer is also available for apps that do not implement a voice agent.  Perhaps you are building a 
+simple CPaaS-type callflow using `say`, `gather` etc and you want to do a call transfer?  No problem, in that
+case you can simply use the standalone [transfer](https://docs.jambonz.org/verbs/verbs/transfer) verb.  The 
+same options described above for the agent handoff are available in the `transfer` verb.
 
 ## How jambonz Compares to Other Voice AI Platforms
 
