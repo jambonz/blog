@@ -3,6 +3,7 @@ title: "Voice Agent Handoff Made Simple in jambonz"
 date: 2026-07-16
 description: "jambonz v11 adds built-in blind, warm, and conferenced handoff for voice agents — declarative, no custom transfer workflow to build."
 author: "Dave Horton"
+coverImage: "./cover.png"
 tags: ["voice-ai", "handoff", "jambonz-v11", "agent", "transfer"]
 faq:
   - question: "What is the difference between blind (cold) transfer and warm transfer in voice AI?"
