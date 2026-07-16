@@ -176,6 +176,44 @@ simple CPaaS-type callflow using `say`, `gather` etc and you want to do a call t
 case you can simply use the standalone [transfer](https://docs.jambonz.org/verbs/verbs/transfer) verb.  The 
 same options described above for the agent handoff are available in the `transfer` verb.
 
+## What happens when the handoff to human fails?
+
+Of course, the call handoff / transfer to human can fail: the person targeted by the handoff may decline the call, the call attempt itself might fail for various reasons, etc. What control do you have over scenarios where this happens?
+
+This is where you use the disposition object. A handoff can fail in a handful of distinct ways, and you configure what should happen for each one independently:
+- `onNoAnswer` (the destination rang out), 
+- `onBusy` (they were busy), 
+- `onDecline` (they actively rejected the call, failed a confirmation prompt, or were caught by answering-machine detection), and 
+- `onFailure` (a protocol-level error on the destination leg). Each of these takes one of three values — return, voicemail, or hangup
+
+and if you don't specify one, it defaults to `return`.
+
+The important thing to understand is that when a handoff fails, the caller is still on the line — they simply never got connected to a human. The disposition is your instruction for what to do with them at that point. 
+
+Setting a disposition to `voicemail` routes the caller straight to the `voicemailUrl` you provide (a SIP URI or an HTTP endpoint that returns verbs); they leave the AI conversation behind and land in your voicemail application flow, as defined by the jambonz application which is served from that URL. 
+
+Setting it to `hangup` ends the call outright. And setting it to `return` — the default — hands the caller back to the AI agent: jambonz re-attaches the live LLM session, and the agent picks the conversation right back up, so it can gracefully recover with something like "It looks like everyone's busy right now — is there anything else I can help you with?"
+
+So the choice comes down to what you want the caller's experience to be when no human is available. Use return for the failure cases where the AI should stay in control and keep helping; use voicemail when you'd rather let them leave a message; and use hangup when there's genuinely nothing more to offer. A common pattern mixes them — send unanswered or busy calls to voicemail, but let declines and errors fall back to the agent:
+
+```ts
+session
+  .agent({
+    ...
+    handoff: {
+      mode: 'warm',
+      target: [{type: 'phone', 'number': '+15551234567' }],
+      disposition": {
+        onNoAnswer: 'voicemail',
+        onBusy: 'voicemail',
+        onDecline: 'return',
+        onFailure: 'return',
+        voicemailUrl: '/voicemail'
+    }
+  }
+}
+```
+
 ## How jambonz Compares to Other Voice AI Platforms
 
 | Feature | jambonz | Other voice AI platforms |
