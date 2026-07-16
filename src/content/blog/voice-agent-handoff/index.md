@@ -62,7 +62,7 @@ All three are the same `agent`(or `s2s`) verb with a different `handoff` block. 
 runnable versions of each (built on [`@jambonz/sdk`][sdk], ≥ 0.8.3) live in
 the [transfer-apps examples][examples].
 
-### 1. Blind transfer
+### 1. Blind Transfer
 
 The caller is connected directly to the human, with no briefing step. Fastest
 option; best for simple routing where context handoff doesn't matter. Here's the
@@ -92,7 +92,7 @@ session
   .send();
 ```
 
-### 2. Warm transfer (private briefing)
+### 2. Warm Transfer (private briefing)
 
 The caller is parked on hold while the voice agent calls the human and briefs
 them privately. The human is screened with a `confirm` gate (they press a digit
@@ -169,7 +169,7 @@ joins the caller into the three-way and lets the voice agent introduce them befo
 
 > For details on each of the handoff properties [please review our docs](https://docs.jambonz.org/verbs/verbs/agent#transfer-to-human-handoff).
 
-## Call transfer when not building a voice agent
+## Call Transfer When Not Building a Voice Agent
 
 Call transfer is also available for apps that do not implement a voice agent.  Perhaps you are building a 
 simple CPaaS-type callflow using `say`, `gather` etc and you want to do a call transfer?  
@@ -178,7 +178,7 @@ No problem, in that
 case you can simply use the standalone [transfer](https://docs.jambonz.org/verbs/verbs/transfer) verb.  The 
 same options described above for the agent handoff are available in the `transfer` verb.
 
-## What happens when the handoff to human fails?
+## What Happens When the Handoff to Human Fails?
 
 Of course, the call handoff / transfer to human can fail: the person targeted by the handoff may decline the call, the call attempt itself might fail for various reasons, etc. What control do you have over scenarios where this happens?
 
