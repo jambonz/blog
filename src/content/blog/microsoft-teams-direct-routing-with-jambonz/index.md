@@ -199,7 +199,7 @@ To make a call to an actual phone number and not the hello world application we 
 - [inbound](https://gist.github.com/davehorton/94b64b8bafcfdf8779d256b292e644bf)
 - [outbound](https://gist.github.com/davehorton/b0c48873cd2fb13a55d8d6bfcbf38d1d)
 
-If you would like more information on jambonz please email us at support@jambonz.org or [join our Slack channel](https://joinslack.jambonz.org).
+If you would like more information on jambonz please email us at support@jambonz.org or [join the jambonz community](https://community.jambonz.org/).
 
 And finally, please visit our valued customers if you are looking for solutions:
 
