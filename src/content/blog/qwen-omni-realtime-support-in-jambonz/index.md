@@ -102,5 +102,5 @@ A few practical notes from our testing:
 - Qwen support ships in @jambonz/schema 0.4.1, @jambonz/sdk 0.10.0, and jambonz
   v11's feature-server and mediajam.
 
-As always, come find us in the [jambonz Slack](https://joinslack.jambonz.org/) with
+As always, come find us in the [jambonz community](https://community.jambonz.org/) with
 questions — we'd love to hear what you build with it.
