@@ -95,7 +95,7 @@ A few practical notes from our testing:
 
 ## Where to go next
 
-- The [Qwen Omni Realtime tutorial](https://docs.jambonz.org/tutorials/qwen) walks
+- The [Qwen Omni Realtime tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples/qwen-omni-realtime) walks
   through the full setup, including function calling and events.
 - A complete working example lives in
   [jambonz/v10-examples](https://github.com/jambonz/v10-examples/tree/main/examples/s2s/qwen).
