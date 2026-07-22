@@ -6,9 +6,9 @@ author: "Dave Horton"
 tags: ["voice-ai", "qwen", "s2s", "speech-to-speech", "alibaba", "llm"]
 faq:
   - question: "What is Qwen Omni-Realtime?"
-    answer: "Qwen Omni-Realtime is [Alibaba Cloud's](https://www.alibabacloud.com/) family of full-duplex speech-to-speech models (the models behind the Qwen-Audio-3.0-Realtime launch). A single model listens and speaks simultaneously over a persistent WebSocket connection, handling speech recognition, reasoning, and speech generation natively without a separate STT/LLM/TTS pipeline."
+    answer: "Qwen Omni-Realtime is Alibaba Cloud's family of full-duplex speech-to-speech models (the models behind the Qwen-Audio-3.0-Realtime launch). A single model listens and speaks simultaneously over a persistent WebSocket connection, handling speech recognition, reasoning, and speech generation natively without a separate STT/LLM/TTS pipeline."
   - question: "Which Qwen models does jambonz support?"
-    answer: "jambonz supports the [Omni-Realtime conversation models](https://www.alibabacloud.com/help/en/model-studio/realtime), including qwen3.5-omni-plus-realtime (strongest reasoning) and qwen3.5-omni-flash-realtime (fastest responses). You choose the model in the verb's model property."
+    answer: "jambonz supports the Omni-Realtime conversation models, including qwen3.5-omni-plus-realtime (strongest reasoning) and qwen3.5-omni-flash-realtime (fastest responses). You choose the model in the verb's model property."
   - question: "How do I authenticate to Qwen from jambonz?"
     answer: "Provide your Alibaba Cloud Model Studio (DashScope) API key in the verb's auth.apiKey property. An optional auth.host selects the endpoint: the default is the international endpoint (dashscope-intl.aliyuncs.com); you can specify a workspace-scoped host or the China (Beijing) endpoint instead. Note that DashScope keys are region-bound. The key and endpoint must belong to the same region."
   - question: "How does turn detection work with Qwen on jambonz?"
@@ -19,13 +19,13 @@ faq:
     answer: "In our testing against the Singapore endpoint, the first audio of the model's reply arrived roughly 400 milliseconds after the caller stopped speaking — comfortably within the range of natural conversational turn-taking."
 ---
 
-We're happy to announce that [jambonz](https://jambonz.org/) now supports Alibaba's
+We're happy to announce that [jambonz](https://jambonz.org/) now supports [Alibaba's](https://www.alibabacloud.com/)
 **Qwen Omni-Realtime** models (the models behind the recent Qwen-Audio-3.0-Realtime
 launch) as a first-class speech-to-speech vendor. If you run [jambonz v11](https://jambonz.org/blog/jambonz-v11-release) or later with the mediajam media engine, you can connect any phone call to a full-duplex Qwen voice agent with a single verb.
 
 ## Why Qwen Omni-Realtime Matters for Voice Agents
 
-Qwen Omni-Realtime is a *native* speech-to-speech model: one model listens, reasons,
+[Qwen Omni-Realtime](https://www.alibabacloud.com/help/en/model-studio/realtime) is a *native* speech-to-speech model: one model listens, reasons,
 and speaks over a single persistent connection, rather than chaining STT → LLM → TTS.
 That architecture shows up where it counts on a phone call:
 
