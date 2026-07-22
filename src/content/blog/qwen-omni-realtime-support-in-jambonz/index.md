@@ -6,11 +6,11 @@ author: "Dave Horton"
 tags: ["voice-ai", "qwen", "s2s", "speech-to-speech", "alibaba", "llm"]
 faq:
   - question: "What is Qwen Omni-Realtime?"
-    answer: "Qwen Omni-Realtime is Alibaba Cloud's family of full-duplex speech-to-speech models (the models behind the Qwen-Audio-3.0-Realtime launch). A single model listens and speaks simultaneously over a persistent WebSocket connection, handling speech recognition, reasoning, and speech generation natively — no separate STT/LLM/TTS pipeline."
+    answer: "Qwen Omni-Realtime is [Alibaba Cloud's](https://www.alibabacloud.com/) family of full-duplex speech-to-speech models (the models behind the Qwen-Audio-3.0-Realtime launch). A single model listens and speaks simultaneously over a persistent WebSocket connection, handling speech recognition, reasoning, and speech generation natively without a separate STT/LLM/TTS pipeline."
   - question: "Which Qwen models does jambonz support?"
-    answer: "jambonz supports the Omni-Realtime conversation models, including qwen3.5-omni-plus-realtime (strongest reasoning) and qwen3.5-omni-flash-realtime (fastest responses). You choose the model in the verb's model property."
+    answer: "jambonz supports the [Omni-Realtime conversation models](https://www.alibabacloud.com/help/en/model-studio/realtime), including qwen3.5-omni-plus-realtime (strongest reasoning) and qwen3.5-omni-flash-realtime (fastest responses). You choose the model in the verb's model property."
   - question: "How do I authenticate to Qwen from jambonz?"
-    answer: "Provide your Alibaba Cloud Model Studio (DashScope) API key in the verb's auth.apiKey property. An optional auth.host selects the endpoint: the default is the international endpoint (dashscope-intl.aliyuncs.com); you can specify a workspace-scoped host or the China (Beijing) endpoint instead. Note that DashScope keys are region-bound — the key and endpoint must belong to the same region."
+    answer: "Provide your Alibaba Cloud Model Studio (DashScope) API key in the verb's auth.apiKey property. An optional auth.host selects the endpoint: the default is the international endpoint (dashscope-intl.aliyuncs.com); you can specify a workspace-scoped host or the China (Beijing) endpoint instead. Note that DashScope keys are region-bound. The key and endpoint must belong to the same region."
   - question: "How does turn detection work with Qwen on jambonz?"
     answer: "Qwen offers two server-side modes, configured in session_update.turn_detection: server_vad (acoustic only) and semantic_vad, which considers whether the caller's utterance sounds complete before ending their turn. We recommend starting with semantic_vad and a silence_duration_ms of 800."
   - question: "Can the voice agent speak first when the call connects?"
@@ -20,32 +20,30 @@ faq:
 ---
 
 We're happy to announce that [jambonz](https://jambonz.org/) now supports Alibaba's
-**Qwen Omni-Realtime** models — the models behind the recent Qwen-Audio-3.0-Realtime
-launch — as a first-class speech-to-speech vendor. If you run jambonz v11 or later
-with the mediajam media engine, you can connect any phone call to a full-duplex Qwen
-voice agent with a single verb.
+**Qwen Omni-Realtime** models (the models behind the recent Qwen-Audio-3.0-Realtime
+launch) as a first-class speech-to-speech vendor. If you run [jambonz v11](https://jambonz.org/blog/jambonz-v11-release) or later with the mediajam media engine, you can connect any phone call to a full-duplex Qwen voice agent with a single verb.
 
-## Why this is interesting
+## Why Qwen Omni-Realtime Matters for Voice Agents
 
 Qwen Omni-Realtime is a *native* speech-to-speech model: one model listens, reasons,
 and speaks over a single persistent connection, rather than chaining STT → LLM → TTS.
 That architecture shows up where it counts on a phone call:
 
 - **Latency.** In our live testing against the Singapore endpoint, the model's first
-  audio arrived about **400 ms after the caller stopped speaking** — squarely in
+  audio arrived about **400 ms after the caller stopped speaking**, squarely in
   natural-conversation territory.
 - **Semantic turn detection.** Beyond plain voice-activity detection, Qwen's
   `semantic_vad` weighs whether the caller's utterance actually *sounds finished*
   before taking the turn.
 - **Streaming transcripts both ways.** Caller speech is transcribed incrementally
   *while they speak*, and the assistant's speech arrives with a synchronized text
-  transcript — so your application always has text to log, analyze, or act on.
+  transcript, so your application always has text to log, analyze, or act on.
 - **Scale of language support**, function calling, and a catalog of 55 voices.
 
-## Using it
+## How to Add Qwen Omni-Realtime to a jambonz Call
 
-If you've used the OpenAI Realtime API with jambonz, this will feel instantly
-familiar — Qwen's wire protocol is an OpenAI-Realtime dialect, and jambonz exposes it
+If you've used the [OpenAI Realtime API with jambonz](https://docs.jambonz.org/tutorials/voice-ai-examples/open-ai-realtime-api), this will feel instantly
+familiar. Qwen's wire protocol is an OpenAI-Realtime dialect, and jambonz exposes it
 the same way. Here's a minimal application using the [@jambonz/sdk](https://www.npmjs.com/package/@jambonz/sdk)
 WebSocket interface:
 
@@ -85,15 +83,15 @@ A few practical notes from our testing:
   (`dashscope-intl.aliyuncs.com`). You can set `auth.host` to a workspace-scoped
   endpoint (`ws-<workspaceId>.<region>.maas.aliyuncs.com`, which Alibaba recommends
   for performance) or to the China (Beijing) endpoint. **DashScope API keys are
-  region-bound** — key and endpoint must match.
+  region-bound**, so key and endpoint must match.
 - **Turn detection tuning.** `silence_duration_ms` controls how long a pause ends the
   caller's turn. Lower values respond faster but will jump into mid-sentence pauses;
   we found 800 ms (the vendor default) a good starting point with `semantic_vad`.
 - **Greeting behavior.** The model stays silent until the caller speaks unless you
-  provide a `response_create` — a deliberate choice so both agent-first and
+  provide a `response_create`, a deliberate choice so both agent-first and
   caller-first call flows are easy.
 
-## Where to go next
+## Where to Learn More About Qwen Omni-Realtime
 
 - The [Qwen Omni Realtime tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples/qwen-omni-realtime) walks
   through the full setup, including function calling and events.
@@ -103,4 +101,4 @@ A few practical notes from our testing:
   v11's feature-server and mediajam.
 
 As always, come find us in the [jambonz community](https://community.jambonz.org/) with
-questions — we'd love to hear what you build with it.
+questions. We'd love to hear what you build with it.
