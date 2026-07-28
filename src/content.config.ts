@@ -7,7 +7,7 @@ const blog = defineCollection({
   // can be co-located and bundled/optimized by Astro. The folder name becomes
   // the slug (route: /blog/<slug>/). Flat <slug>.md files also work.
   // Ignore anything whose file or folder name starts with `_` (scratch/work).
-  loader: glob({ pattern: ['**/*.md', '!**/_*', '!**/_*/**'], base: './src/content/blog' }),
+  loader: glob({ pattern: ['**/*.{md,mdx}', '!**/_*', '!**/_*/**'], base: './src/content/blog' }),
   schema: ({ image }) =>
     z.object({
       title: z.string(),

@@ -2,10 +2,12 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
+import mdx from '@astrojs/mdx';
+
 // https://astro.build/config
 export default defineConfig({
   // Generates sitemap-index.xml from `site` + page paths -> https://jambonz.org/blog/...
-  integrations: [sitemap()],
+  integrations: [sitemap(), mdx()],
   // The blog is served under jambonz.org/blog. The root domain is a separate
   // Next.js app; an mt-website rewrite proxies /blog/* to this deployment.
   site: 'https://jambonz.org',
