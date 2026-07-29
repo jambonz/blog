@@ -21,7 +21,7 @@ member tags](https://docs.jambonz.org/verbs/verbs/conference), [coach mode](http
 without being a participant. To show how it all fits together, we built a complete,
 [open-source](https://docs.jambonz.org/welcome) supervision console:
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/V-wPtCeQnm4?si=Y247I01Noiz181MG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/QlGtWrd1qqM?si=YQRXz0vpyQXFVxUx" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 All code for this example application can be found on [github](https://github.com/jambonz/room-monitor).
 
