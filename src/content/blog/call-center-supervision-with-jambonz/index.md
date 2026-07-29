@@ -1,87 +1,86 @@
 ---
-title: "Listen, coach, barge in: call-center supervision on jambonz"
+title: "Call Center Supervision on jambonz: Listen, Coach, Barge In"
 date: 2026-07-29
-description: "A complete open-source supervision console for jambonz conferences — silent monitoring, whisper coaching, barge-in, and an on-demand live transcript — plus the platform primitives it's built on, how to run the demo, and how to adapt it into your own product."
+description: "Add live call monitoring, agent coaching, and barge-in to any conference with jambonz v11's conference listen fork. Open-source reference app included."
 author: "Dave Horton"
 tags: ["conferencing", "call-center", "coaching", "transcription", "webrtc", "reference-app"]
 coverImage: ./cover.png
 ---
 
-Every contact center eventually needs the same three superpowers: a supervisor
-who can **listen** to a live call without anyone knowing, **coach** an agent
-through a rough moment without the customer hearing, and — when things really
-go sideways — **barge in** and take over. Add a live transcript of the room and
-you've described the supervision feature set of every serious call-center
-platform.
+Every contact center eventually needs the same three superpowers. A supervisor who can:
 
-jambonz has had the underlying machinery for this for a while (conference
-member tags, coach mode, mid-call participant actions), and in version 11 we've recently
-added the missing piece — a way to tap a conference's audio without being a
-participant. To show how it all fits together, we built a complete,
-open-source supervision console:
+1. **Listen** to a live call without anyone knowing.
+2. **Coach** an agent through a rough moment without the customer hearing.
+3. **Barge in** and take over when things go sideways.
+
+Add a [live transcript](https://docs.jambonz.org/verbs/verbs/transcribe) of the room and you've 
+described the supervision feature set of every serious call-center platform.
+
+[jambonz](https://jambonz.org/) has had the underlying machinery for this for a while ([conference
+member tags](https://docs.jambonz.org/verbs/verbs/conference), [coach mode](https://docs.jambonz.org/guides/features/conferencing-coach-mode), [mid-call participant actions](https://docs.jambonz.org/reference/rest-call-control/calls/update-call)), and in [version 11](https://jambonz.org/blog/jambonz-v11-release) we've recently added the missing piece — a way to tap a conference's audio 
+without being a participant. To show how it all fits together, we built a complete,
+[open-source](https://docs.jambonz.org/welcome) supervision console:
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/V-wPtCeQnm4?si=Y247I01Noiz181MG" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-All code for this example application can be found on [github](https://github.com/jambonz/room-monitor)
+All code for this example application can be found on [github](https://github.com/jambonz/room-monitor).
 
-It's a real application — React front end, Node backend, live-tested with
-humans on real phones — but it's deliberately small and readable, because its
-main job is to be **a reference you can take apart and rebuild into your own
-product**. This post walks through what it does, the jambonz primitives
-underneath it, how to run the demo yourself, and some suggestions on how you 
-might adapt it for your own needs.
+It's a real application (React front end, Node backend, live-tested with
+humans on real phones), but it's deliberately small and readable, because its
+main job is to be **a reference you can take apart and [rebuild into your own
+product**](https://docs.jambonz.org/self-hosting/overview). This post walks through how
+call center supervision works, the jambonz primitives underneath it, how to run the demo 
+yourself, and some suggestions on how you might adapt it for your own needs.
 
 ![The supervisor console: coaching an agent while the live transcript rolls](./coach-transcript.png)
 
-## What the app does
+## What Does the Call Supervisor App Do?
 
-A supervisor signs in and sees every live room (conference) assiciated with a jambonz account,
-updating in real time: room names, running durations, and a participant
+A supervisor signs in and sees every live room (conference) associated with a [jambonz account](https://jambonz.cloud/), updating in real time: room names, running durations, and a participant
 breakdown that distinguishes **agents** from everyone else.
 
 ![Signing in: the console connects to your jambonz installation](./login.png)
 
-Selecting a room shows its participants as chips — caller ID when available,
-the bare number otherwise, with agents visibly tagged — and three engagement
+Selecting a room shows its participants as chips (caller ID when available,
+the bare number otherwise, with agents visibly tagged) and three engagement
 buttons:
 
 ![A selected room, supervisor not yet connected](./console-idle.png)
 
-- **Listen** — the supervisor hears everything; nobody hears the supervisor.
+- **Listen**: the supervisor hears everything; nobody hears the supervisor.
   The supervisor never appears as a participant, and the counts don't change.
 
 ![Silent monitoring: the participants cannot hear you](./listening.png)
 
-- **Coach** — the supervisor's audio is delivered **only to the agents** in
+- **Coach**: the supervisor's audio is delivered **only to the agents** in
   the room. The customer hears nothing. The button only appears when the room
   actually contains an agent, and if the last agent hangs up mid-coaching, the
   console automatically falls back to listening.
 
-- **Enter Room** — full barge-in; everyone hears the supervisor.
+- **Enter Room**: full barge-in; everyone hears the supervisor.
 
 ![Barge-in: everyone in the room hears the supervisor](./enter-room.png)
 
-Switching between these modes is **instant** — no re-dial, no interruption to
+Switching between these modes is **instant**. There is no re-dial or interruption to
 the room. Under the hood the supervisor holds exactly one call leg, and each
 mode change is a mid-call command on it.
 
 Then there's the **live transcript**: per-room, on-demand, and labelled with
-who is actually speaking — **"agent"** for anyone carrying the agent tag, the
+who is speaking. **"Agent"** for anyone carrying the agent tag, the
 **caller's phone number** for everyone else, **"supervisor"** for the
 supervisor's own barge-in. 
 
 Words appear in a **"being said now"** pane while they are still
 being spoken, then settle into the record above when they are finalized.
 
-Note: We used [Deepgram](https://deepgram.com/) Nova-3 for the speech recognition because 
+**Note:** We used [Deepgram](https://deepgram.com/) Nova-3 for the speech recognition because 
 in our testing it provided the best latency of any STT vendor.
 
 ![The live transcript: each participant labelled by role or number, with in-progress speech in the pane below](./transcript-labels.png)
 
-Listening and transcribing are independent features; you can transcribe the conversation in a room in real time, 
-whether or not you have joined it or are even listening to it. 
+Listening and transcribing are independent features; you can transcribe the conversation in a room in real time, whether or not you have joined it or are even listening to it. 
 
-## How it works
+## How Call Center Supervision Works
 
 The operation is based on a simple concept of tags.
 Each participant can optionally be assigned one or more tags, and a tag is nothing more 
@@ -92,10 +91,10 @@ Participants that are customers do not receive a tag.
 The second piece of this is the optional property `speakOnlyTo` that can be assigned to a participant.
 If assigned, the value is used to direct that participant's audio only to the subset of participants in the room that have been assigned a tag of the same value. Thus, when a supervisor joins in coach mode, we simply set his or her speak-only-to property to 'agent'.
 
-It's that simple. What's even better is that these tags, adn the speakOnlyTo property, Can be dynamically changed or unassigned 
-at any point in time via the jambonz SDK, and media flows will automatically and immediately adjust accordingly. 
+It's that simple. What's even better is that these tags, and the speakOnlyTo property, can be 
+dynamically changed or unassigned at any point in time via the [jambonz SDK](https://jambonz.org/blog/getting-started-with-the-jambonz-python-sdk), and media flows will automatically and immediately adjust accordingly. 
 
-### Show me
+### Call Center Supervision in Action
 
 When an agent is joining a conference room, we simply include their tag on the conference verb:
 
@@ -120,7 +119,7 @@ await client.calls.update(callSid, {
 });
 ```
 
-### One leg, three modes
+### One Leg, Three Modes of Supervision
 
 The supervisor joins as a normal (but muted, tagged, and deliberately
 non-room-owning) member:
@@ -156,7 +155,7 @@ Note: the same actions exist over REST (`PUT /Accounts/{sid}/Calls/{call_sid}`)
 
 ### Tapping the room's audio
 
-The newest primitive is the **conference listen fork** — the thing that makes
+The newest primitive is the **conference listen fork**, the thing that makes
 the transcript possible without the supervisor being connected:
 
 ```bash
@@ -166,13 +165,12 @@ curl -X POST "$BASE_URL/v1/Accounts/$ACCOUNT_SID/Conferences/customer-support/li
        "metadata": {"room": "customer-support", "sampleRate": 16000}}'
 ```
 
-jambonz dials out to your WebSocket and streams the room's mixed audio as L16
-PCM. In the example app, what sits on the other end of that socket is 
-code that streams the audio to Deepgram for real-time transcription, but equally 
-you could replace with your own STT, a sentiment engine,
+jambonz dials out to your [WebSocke](https://docs.jambonz.org/reference/websocket-api/call-control/overview) and streams the room's mixed audio as L16 PCM. In the example app, what sits on the other 
+end of that socket is code that streams the audio to Deepgram for real-time transcription, 
+but equally you could replace with your own STT, a sentiment engine,
 compliance phrase detection, or a recorder etc.
 
-### One stream per speaker
+### One Stream Per Speaker
 
 The simple stream of mixed audio from the room is the right tap for recording a call, but 
 it is the wrong tap for knowing who said what.  Here you have two options:
@@ -199,15 +197,14 @@ itself in its first text frame:
 ```
 
 Participants who join after the conference starts are forked automatically; each fork is 
-closed gracefully with its participant leaves the room.
+closed gracefully when its participant leaves the room.
 
-Note that **coached audio is never delivered over a websocket to the app**, so private coaching cannot leak into a
-transcription or recording tap.
+Note that **coached audio is never delivered over a websocket to the app**, so private coaching cannot leak into a transcription or recording tap.
 
-(These endpoints ship with jambonz version 11 conferencing — they're on jambonz.cloud today. The full API reference is on
+(These endpoints ship with jambonz version 11 conferencing. They're on jambonz.cloud today. The full API reference is on
 [docs.jambonz.org](https://docs.jambonz.org/reference/rest-call-control/conferences/start-conference-listen).)
 
-### Discovering rooms
+### Discovering Rooms
 
 ```
 GET /Accounts/{sid}/Conferences?expand=participants
@@ -218,10 +215,10 @@ GET /Accounts/{sid}/Conferences?expand=participants
 
 The application uses the REST API above to build the console's room list, and it's how your own tooling can
 answer "which live calls have no agent yet?" in one request. `number` is the
-**remote party** — who called in, or who you dialed — which is what the
+**remote party** (who called in, or who you dialed) which is what the
 transcript uses to label a participant who isn't an agent.
 
-## The architecture, in two pipelines
+## The Architecture of Call Center Supervision, in Two Pipelines
 
 The app splits cleanly into two independent flows that share nothing but a
 room's name:
@@ -246,15 +243,15 @@ jambonz SBC ──▶ supervisor leg in conference       media server forks each
 
 The browser talks to the backend over a small typed WebSocket contract (four
 message types each way), places its media leg with the
-[jambonz WebRTC SDK](https://github.com/jambonz/webrtc-sdk) — routed straight
-to the application via an `X-Application-Sid` header, no dial plan needed —
+[jambonz WebRTC SDK](https://github.com/jambonz/webrtc-sdk), routed straight
+to the application via an `X-Application-Sid` header, no dial plan needed,
 and never sees a `call_sid` or an API key doing anything sensitive.
 
-## Making a live transcript feel live
+## Making a Live Transcript Feel Live
 
 Two problems that came up as we tested with real conversations:
 
-**Finals arrive late.** A speech-to-text engine emits a finished line after it
+**Finals arrive late:** A speech-to-text engine emits a finished line after it
 decides the utterance has ended, which measured at a median **2.35 s** (p90
 4.0 s) from when the person started speaking. So the console publishes *interim*
 results too — and because each stream has exactly one known speaker, they need
@@ -269,14 +266,14 @@ are reading it.
      text, and a few settled lines above it. -->
 ![In-progress speech appears immediately in its own pane, then settles into the record above](./live-pane.png)
 
-**Per-speaker streams finish out of order.** Each participant has an independent
+**Per-speaker streams finish out of order:** Each participant has an independent
 STT session, so a long utterance that *started* first can be finalised after a
 short one that started later. Appending in arrival order puts the conversation
 out of sequence — a reply above the thing it replies to. Every line therefore
 carries the wall-clock time its speech *began* (derived from the engine's
 word-level offsets), and the console inserts by that, not by arrival.
 
-## Test suite included
+## End-to-End Testing With Scripted Audio
 
 The repo ships a closed-loop end-to-end test (`tools/e2e/`) that launches
 three headless Chromium instances whose **microphones are scripted WAV
@@ -287,11 +284,11 @@ transcription fork hears whatever the room mix contains, so:
 
 - the caller's scripted words appearing in the transcript proves the entire
   audio path (browser → SBC → media server mix → fork → STT) end to end;
-- the supervisor's scripted words being **absent** while coaching — and
-  **present** after barge-in — proves the coach-privacy contract with no ears
+- the supervisor's scripted words being **absent** while coaching (and
+  **present** after barge-in) proves the coach-privacy contract with no ears
   involved.
 
-## Running the demo
+## Running the Demo
 
 You need jambonz.cloud or a self-hosted jambonz release 11.0.3 or above, a
 [Deepgram](https://deepgram.com) API key for the transcript, and Node 20+.
@@ -301,7 +298,7 @@ step-by-step runbook — is in the repo's
 [DEMO.md](https://github.com/jambonz/room-monitor/blob/main/DEMO.md).
 
 To populate a room, the simplest thing is to point **two phone numbers** at the
-caller application — one arriving as an agent, one as a customer. That app
+caller application, one arriving as an agent, one as a customer. That app
 declares two env vars, `ROOM_NAME` and `ROLE` (`agent` or `caller`), which the
 portal discovers via OPTIONS and shows on the application screen. Since env vars
 belong to the *application*, you create two applications aimed at the same
@@ -317,25 +314,25 @@ does not. If you want to rope in other people,
 [docs/LIVE-TEST.md](https://github.com/jambonz/room-monitor/blob/main/docs/LIVE-TEST.md)
 is a ready-to-send hand-out for a three-person test.
 
-## Adapting it into your product
+## Adapting Room Monitor Into Your Product
 
 This is a sample application that's intended to be iterated on. The repo's
 [ADAPTING.md](https://github.com/jambonz/room-monitor/blob/main/docs/ADAPTING.md)
 is the full guide; the short version:
 
-**Keep the contract, replace everything else.** The five primitives in the
+**Keep the contract, replace everything else:** The five primitives in the
 table above are the stable surface. The React UI, the Node backend, the
 Deepgram integration — all of it is replaceable scaffolding around those five
 calls.
 
-**The one true integration point is tagging.** The monitor never decides who
+**The one true integration point is tagging:** The monitor never decides who
 an agent is; it reads `memberTag`. Wherever your existing call flow puts an
-agent into a conference, add the tag — one property — and this console (or
+agent into a conference, add the tag (one property) and this console (or
 your version of it) lights up. Richer taxonomies work too: `speakOnlyTo`
 accepts any tag, so "coach only the trainee" or "whisper to the interpreter"
 are the same mechanism with a different tag.
 
-**Swap the audio consumer.** The transcription module is ~150 lines of "PCM
+**Swap the audio consumer:** The transcription module is ~150 lines of "PCM
 in → Deepgram → labelled fragments out." The feed is plain L16 PCM over a
 WebSocket, so that is where you'd plug in a different STT vendor, AI
 supervision (sentiment, compliance phrases, auto-summaries, agent-assist), or
@@ -343,27 +340,27 @@ archival. Choose your scope by what you're building: `members` when you need to
 know who said it (transcripts, agent scoring, real-time assist), `mix` when you
 want the room audio as one artifact (recording, a single summariser).
 
-**Know the demo shortcuts.** The repo is honest about what's demo-grade:
+**Know the demo shortcuts:** The repo is honest about what's demo-grade:
 there's no auth on the browser WebSocket, credentials are typed per-session
 instead of held server-side, the phone page is a test fixture, room state is
 polled rather than pushed, and nothing is persisted. ADAPTING.md lists each
 one with the exact file where the production fix goes.
 
-## If you build with an AI assistant
+## Using the jambonz MCP Server With AI Coding Assistants
 
 Everything in this post is also wired into the
 [jambonz MCP server](https://github.com/jambonz/mcp-server). Point Claude
 Code (or Cursor, or any MCP-capable assistant) at
 `https://mcp-server.jambonz.app/mcp` and it can pull
-`guide:conference-monitoring` — the supervision patterns as an LLM-ready
-reference — and the `conference-supervision` SDK example, a two-file
+`guide:conference-monitoring` (the supervision patterns as an LLM-ready
+reference) and the `conference-supervision` SDK example, a two-file
 distillation of this app served with full source. Ask your assistant to
 "build a supervision tool on jambonz" and it has the contract, the code, and
 the gotchas without you explaining any of it.
 
-## Wrapping up
+## The Five Primitives Behind Room Monitor
 
-Supervision features have a reputation for being deep platform magic —
+Supervision features have a reputation for being deep platform magic,
 something you only get from the big CCaaS vendors. The point of room-monitor
 is that on jambonz they're an afternoon of plumbing around five primitives:
 tag your agents, join one muted leg, flip participant actions on it, fork the
