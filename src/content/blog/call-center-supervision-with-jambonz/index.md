@@ -17,7 +17,7 @@ Add a [live transcript](https://docs.jambonz.org/verbs/verbs/transcribe) of the 
 described the supervision feature set of every serious call-center platform.
 
 [jambonz](https://jambonz.org/) has had the underlying machinery for this for a while ([conference
-member tags](https://docs.jambonz.org/verbs/verbs/conference), [coach mode](https://docs.jambonz.org/guides/features/conferencing-coach-mode), [mid-call participant actions](https://docs.jambonz.org/reference/rest-call-control/calls/update-call)), and in [version 11](https://jambonz.org/blog/jambonz-v11-release) we've recently added the missing piece — a way to tap a conference's audio 
+member tags](https://docs.jambonz.org/verbs/verbs/conference), [coach mode](https://docs.jambonz.org/guides/features/conferencing-coach-mode), [mid-call participant actions](https://docs.jambonz.org/reference/rest-call-control/calls/update-call)), and in [version 11](https://jambonz.org/blog/jambonz-v11-release) we've recently added the missing piece: a way to tap a conference's audio 
 without being a participant. To show how it all fits together, we built a complete,
 [open-source](https://docs.jambonz.org/welcome) supervision console:
 
@@ -27,8 +27,8 @@ All code for this example application can be found on [github](https://github.co
 
 It's a real application (React front end, Node backend, live-tested with
 humans on real phones), but it's deliberately small and readable, because its
-main job is to be **a reference you can take apart and [rebuild into your own
-product**](https://docs.jambonz.org/self-hosting/overview). This post walks through how
+main job is to be a reference you can take apart and [rebuild into your own
+product](https://docs.jambonz.org/self-hosting/overview). This post walks through how
 call center supervision works, the jambonz primitives underneath it, how to run the demo 
 yourself, and some suggestions on how you might adapt it for your own needs.
 
@@ -165,7 +165,7 @@ curl -X POST "$BASE_URL/v1/Accounts/$ACCOUNT_SID/Conferences/customer-support/li
        "metadata": {"room": "customer-support", "sampleRate": 16000}}'
 ```
 
-jambonz dials out to your [WebSocke](https://docs.jambonz.org/reference/websocket-api/call-control/overview) and streams the room's mixed audio as L16 PCM. In the example app, what sits on the other 
+jambonz dials out to your [WebSocket](https://docs.jambonz.org/reference/websocket-api/call-control/overview) and streams the room's mixed audio as L16 PCM. In the example app, what sits on the other 
 end of that socket is code that streams the audio to Deepgram for real-time transcription, 
 but equally you could replace with your own STT, a sentiment engine,
 compliance phrase detection, or a recorder etc.
@@ -292,9 +292,9 @@ transcription fork hears whatever the room mix contains, so:
 
 You need jambonz.cloud or a self-hosted jambonz release 11.0.3 or above, a
 [Deepgram](https://deepgram.com) API key for the transcript, and Node 20+.
-Everything else — provisioning the two applications and the webrtc clients (or
+Everything else (provisioning the two applications and the webrtc clients (or
 just running `tools/e2e/provision.mjs`), the handful of env vars, and a
-step-by-step runbook — is in the repo's
+step-by-step runbook) is in the repo's
 [DEMO.md](https://github.com/jambonz/room-monitor/blob/main/DEMO.md).
 
 To populate a room, the simplest thing is to point **two phone numbers** at the
@@ -306,7 +306,7 @@ websocket endpoint, give them the same `ROOM_NAME`, set `ROLE=agent` on one and
 `ROLE=caller` on the other, and route a DID at each. `ROLE=agent` is the whole
 difference: it adds `memberTag: 'agent'` to the conference verb, which is what
 makes Coach light up. Dial both numbers and you have a live room with a tagged
-agent and a customer in it — no code changes to move them to another room.
+agent and a customer in it. There are no code changes to move them to another room.
 
 Then, with the console watching that room, the one step worth doing with your
 own ears is Coach: speak, and the agent's phone hears you while the customer's
@@ -322,7 +322,7 @@ is the full guide; the short version:
 
 **Keep the contract, replace everything else:** The five primitives in the
 table above are the stable surface. The React UI, the Node backend, the
-Deepgram integration — all of it is replaceable scaffolding around those five
+Deepgram integration. All of it is replaceable scaffolding around those five
 calls.
 
 **The one true integration point is tagging:** The monitor never decides who
@@ -368,6 +368,6 @@ room's audio when you want a transcript, and list conferences with
 `expand=participants`.
 
 The code is at
-[github.com/jambonz/room-monitor](https://github.com/jambonz/room-monitor) —
+[github.com/jambonz/room-monitor](https://github.com/jambonz/room-monitor). 
 MIT-licensed, live-tested, with the architecture doc, the adaptation guide,
 and the closed-loop test suite included. Take it apart. Build something.
