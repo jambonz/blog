@@ -1,6 +1,6 @@
 ---
 title: "Listen, coach, barge in: call-center supervision on jambonz"
-date: 2026-07-02
+date: 2026-07-29
 description: "A complete open-source supervision console for jambonz conferences — silent monitoring, whisper coaching, barge-in, and an on-demand live transcript — plus the platform primitives it's built on, how to run the demo, and how to adapt it into your own product."
 author: "Dave Horton"
 tags: ["conferencing", "call-center", "coaching", "transcription", "webrtc", "reference-app"]
