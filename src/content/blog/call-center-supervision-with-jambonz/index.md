@@ -5,7 +5,6 @@ description: "A complete open-source supervision console for jambonz conferences
 author: "Dave Horton"
 tags: ["conferencing", "call-center", "coaching", "transcription", "webrtc", "reference-app"]
 coverImage: ./cover.png
-draft: true
 ---
 
 Every contact center eventually needs the same three superpowers: a supervisor
@@ -16,27 +15,27 @@ you've described the supervision feature set of every serious call-center
 platform.
 
 jambonz has had the underlying machinery for this for a while (conference
-member tags, coach mode, mid-call participant actions), and we've recently
+member tags, coach mode, mid-call participant actions), and in version 11 we've recently
 added the missing piece — a way to tap a conference's audio without being a
 participant. To show how it all fits together, we built a complete,
 open-source supervision console:
-**[jambonz/room-monitor](https://github.com/jambonz/room-monitor)**.
 
-<!-- SCREENSHOT (RE-SHOOT — the current one shows "Speaker 1 / Speaker 2", which
-     is now only the fallback). Hero image, also used as the cover: the console
-     while coaching, transcript running with real labels. Blur the account SID. -->
-![The supervisor console: coaching an agent while the live transcript rolls](./coach-transcript.png)
+<!-- TODO: embed video -->
+
+All code for this example application can be found on [github](https://github.com/jambonz/room-monitor)
 
 It's a real application — React front end, Node backend, live-tested with
 humans on real phones — but it's deliberately small and readable, because its
 main job is to be **a reference you can take apart and rebuild into your own
 product**. This post walks through what it does, the jambonz primitives
-underneath it, how to run the demo yourself, and where the seams are when you
-adapt it.
+underneath it, how to run the demo yourself, and some suggestions on how you 
+might adapt it for your own needs.
+
+![The supervisor console: coaching an agent while the live transcript rolls](./coach-transcript.png)
 
 ## What the app does
 
-A supervisor signs in and sees every live room (conference) on the account,
+A supervisor signs in and sees every live room (conference) assiciated with a jambonz account,
 updating in real time: room names, running durations, and a participant
 breakdown that distinguishes **agents** from everyone else.
 
@@ -69,42 +68,36 @@ mode change is a mid-call command on it.
 Then there's the **live transcript**: per-room, on-demand, and labelled with
 who is actually speaking — **"agent"** for anyone carrying the agent tag, the
 **caller's phone number** for everyone else, **"supervisor"** for the
-supervisor's own barge-in. No "Speaker 1 / Speaker 2" guesswork, because the
-media server hands us one audio stream per participant rather than a single
-mixed one. Words appear in a **"being said now"** pane while they are still
-being spoken, then settle into the record above in the order they were
-*spoken* — not the order the speech-to-text engine happened to finish them.
+supervisor's own barge-in. 
 
-<!-- SCREENSHOT (NEW — placeholder is a plain magenta image): the console
-     mid-call with the transcript running. Ideally shows all three label kinds — an "agent" line, a phone-number line, and
-     grey in-progress text in the "Being said now" pane at the bottom.
-     Blur the account SID in the top-right. -->
+Words appear in a **"being said now"** pane while they are still
+being spoken, then settle into the record above when they are finalized.
+
+Note: We used [Deepgram](https://deepgram.com/) Nova-3 for the speech recognition because 
+in our testing it provided the best latency of any STT vendor.
+
 ![The live transcript: each participant labelled by role or number, with in-progress speech in the pane below](./transcript-labels.png)
 
-Three properties matter. It is **independent of listening** — you can
-transcribe a room you are not connected to at all. It respects coach privacy:
-what the supervisor whispers to an agent never appears (more on why that is
-guaranteed, and how we proved it, below). And it costs the caller nothing in
-latency, because jambonz is only moving audio.
+Listening and transcribing are independent features; you can transcribe the conversation in a room in real time, 
+whether or not you have joined it or are even listening to it. 
 
-## The jambonz primitives underneath
+## How it works
 
-Everything in the app rides on six platform capabilities. If you remember
-nothing else from this post, remember this table — it's the stable contract
-your own version builds against.
+The operation is based on a simple concept of tags.
+Each participant can optionally be assigned one or more tags, and a tag is nothing more 
+than a simple string value you can assign to the participant. 
+In our application, we assign the tag value 'agent' to participants that are agents. 
+Participants that are customers do not receive a tag. 
 
-| Capability | Mechanism |
-|---|---|
-| Who is an "agent" | `memberTag` on each conference member |
-| Silent monitor | join the conference with `joinMuted: true` |
-| Coach / whisper | supervisor audio delivered only to members with a given tag |
-| Barge-in | `uncoach` + unmute |
-| Room audio out | a **conference listen fork**: jambonz streams the room mix to your WebSocket |
-| Per-speaker audio out | the same fork with `scope: "members"` — one identity-tagged stream per participant |
+The second piece of this is the optional property `speakOnlyTo` that can be assigned to a participant.
+If assigned, the value is used to direct that participant's audio only to the subset of participants in the room that have been assigned a tag of the same value. Thus, when a supervisor joins in coach mode, we simply set his or her speak-only-to property to 'agent'.
 
-### Tags drive everything
+It's that simple. What's even better is that these tags, adn the speakOnlyTo property, Can be dynamically changed or unassigned 
+at any point in time via the jambonz SDK, and media flows will automatically and immediately adjust accordingly. 
 
-When your application puts an agent into a conference, tag them:
+### Show me
+
+When an agent is joining a conference room, we simply include their tag on the conference verb:
 
 ```js
 session.conference({
@@ -113,9 +106,8 @@ session.conference({
 }).send();
 ```
 
-That one property powers the console's agent counts, the Coach button gating,
-and the coach audio routing. And tags are **fully dynamic** — you can promote
-or demote a live participant without a re-join:
+Or if we wanted to assign a tag to a participant already in the conference, or remove a tag, 
+we can use the injectCommand API to do so:
 
 ```js
 // the application controlling the leg:
@@ -127,10 +119,6 @@ await client.calls.update(callSid, {
   conferenceParticipantAction: { action: 'tag', tag: 'agent' },
 });
 ```
-
-An active coach re-relates automatically when tags change: think "warm
-transfer just completed" or "human takes over from the AI agent" — the
-coaching starts reaching them the moment the tag lands.
 
 ### One leg, three modes
 
@@ -164,12 +152,7 @@ session.injectCommand('conf:participant-action', { action: 'uncoach' });
 session.injectCommand('conf:mute-status', { conf_mute_status: 'mute' });
 ```
 
-A note on transport: the same actions exist over REST
-(`PUT /Accounts/{sid}/Calls/{call_sid}`), but the reference app injects them
-over the leg's own WebSocket session. That reaches the exact feature-server
-process that owns the leg *by construction*, so the app works on any
-deployment topology — including a single box running one feature-server per
-core.
+Note: the same actions exist over REST (`PUT /Accounts/{sid}/Calls/{call_sid}`)
 
 ### Tapping the room's audio
 
@@ -184,22 +167,21 @@ curl -X POST "$BASE_URL/v1/Accounts/$ACCOUNT_SID/Conferences/customer-support/li
 ```
 
 jambonz dials out to your WebSocket and streams the room's mixed audio as L16
-PCM. That's the entire jambonz involvement: **it transports audio and knows
-nothing about transcription**. What sits on the other end of that socket —
-Deepgram in the reference app, but equally your own STT, a sentiment engine,
-compliance phrase detection, or a recorder — is entirely your business.
+PCM. In the example app, what sits on the other end of that socket is 
+code that streams the audio to Deepgram for real-time transcription, but equally 
+you could replace with your own STT, a sentiment engine,
+compliance phrase detection, or a recorder etc.
 
 ### One stream per speaker
 
-The mix is the right tap for recording a call. It is the wrong tap for knowing
-*who said what*, and we have the numbers to prove it. Every conference member
-arrives at the media server as G.711, so the mix is always narrowband — and
-speaker diarization on a narrowband mono mix measured **~70–85% word
-attribution** for us across every Deepgram configuration we tried, even with
-clean turn-taking and no crosstalk. Good enough for a demo screenshot; not good
-enough to put a customer's words in an agent's mouth.
+The simple stream of mixed audio from the room is the right tap for recording a call, but 
+it is the wrong tap for knowing who said what.  Here you have two options:
+- diarize the single mixed audio stream and have your STT try to identify speakers, or
+- instruct jambonz instead to have you a separate stream per participant.
 
-So the fork grew a second scope:
+In our testing, the diarization was not 100% reliable so we implemented the second approach: 
+receiving a separate audio stream per participant and applying real-time transcription 
+to each participant, then combining them in the transcript window.
 
 ```bash
 curl -X POST "$BASE_URL/v1/Accounts/$ACCOUNT_SID/Conferences/support-line/listen" \
@@ -216,31 +198,16 @@ itself in its first text frame:
   "accountSid": "…", "tag": "agent", "sampleRate": 16000 }
 ```
 
-Now attribution is a lookup, not a guess: run one STT session per stream with
-diarization switched **off**, and label its output from the identity the stream
-came with. Participants who join later are forked automatically; each fork dies
-with its participant, and the whole policy dies with the room. Two other things
-fall out for free — a member's stream carries what they *say*, never what they
-*hear*, so coaching cannot leak into it by construction; and because the streams
-are separate, the app can gate one of them (the supervisor's) without touching
-the others.
+Participants who join after the conference starts are forked automatically; each fork is 
+closed gracefully with its participant leaves the room.
 
-The fork has exactly the lifecycle you'd hope for. It's a media-server-owned
-bot member: excluded from participant counts, never keeps a room alive, torn
-down automatically when the conference ends. Starting it requires no
-participant leg, and repeated starts are idempotent. And — this is the part
-with teeth — **coached audio is never delivered to it**, because the fork is
-an untagged listener like any other. Private coaching cannot leak into a
+Note that **coached audio is never delivered over a websocket to the app**, so private coaching cannot leak into a
 transcription or recording tap.
 
-(These endpoints ship with MediaJam-based conferencing — they're on jambonz
-`main` today and in the next release. The full API reference is on
+(These endpoints ship with jambonz version 11 conferencing — they're on jambonz.cloud today. The full API reference is on
 [docs.jambonz.org](https://docs.jambonz.org/reference/rest-call-control/conferences/start-conference-listen).)
 
 ### Discovering rooms
-
-One more endpoint rounds out the set — the conferences listing grew an
-`expand` parameter:
 
 ```
 GET /Accounts/{sid}/Conferences?expand=participants
@@ -249,7 +216,7 @@ GET /Accounts/{sid}/Conferences?expand=participants
                       memberTag, isAgent }] }]
 ```
 
-That's what feeds the console's room list, and it's how your own tooling can
+The application uses the REST API above to build the console's room list, and it's how your own tooling can
 answer "which live calls have no agent yet?" in one request. `number` is the
 **remote party** — who called in, or who you dialed — which is what the
 transcript uses to label a participant who isn't an agent.
@@ -265,7 +232,7 @@ Supervisor media + control                    Transcription
 Browser (WebRTC SDK)                          Backend ──REST──▶ jambonz
   │ SIP over WebSocket                                            │
   ▼                                                               ▼
-jambonz SBC ──▶ supervisor leg in conference          MediaJam forks each member
+jambonz SBC ──▶ supervisor leg in conference       media server forks each member
   ▲                                                               │
   │ conf:participant-action (coach/uncoach/mute)                  │ one L16 stream
   └── injected by the backend over the leg's ws session           │ per participant
@@ -285,7 +252,7 @@ and never sees a `call_sid` or an API key doing anything sensitive.
 
 ## Making a live transcript feel live
 
-Two problems only show up once you are watching a real conversation scroll past.
+Two problems that came up as we tested with real conversations:
 
 **Finals arrive late.** A speech-to-text engine emits a finished line after it
 decides the utterance has ended, which measured at a median **2.35 s** (p90
@@ -309,10 +276,7 @@ out of sequence — a reply above the thing it replies to. Every line therefore
 carries the wall-clock time its speech *began* (derived from the engine's
 word-level offsets), and the console inserts by that, not by arrival.
 
-## How we know coach mode actually works
-
-Here's my favorite part of this project. How do you *prove* that the customer
-can't hear the coaching — in CI, with no humans?
+## Test suite included
 
 The repo ships a closed-loop end-to-end test (`tools/e2e/`) that launches
 three headless Chromium instances whose **microphones are scripted WAV
@@ -327,91 +291,35 @@ transcription fork hears whatever the room mix contains, so:
   **present** after barge-in — proves the coach-privacy contract with no ears
   involved.
 
-That assertion earned its keep before the app ever shipped: it caught a real
-bug where a transcription fork that joined a room *mid-coaching* would hear
-the coached audio (late-joining bots weren't announced, so the coach
-relationships were never re-applied to them). Fixed in the media server, with
-a regression test — and the e2e has verified the contract on every deploy
-since.
-
-The same harness now also asserts the things that turned out to be easy to get
-wrong: that each line is attributed to the right *identity* (an agent labelled
-by role, a caller by number, the supervisor only when barged in), that the
-displayed timestamps never go backwards, and — the one that bit us hardest —
-that a room which empties and re-forms under the same name keeps transcribing,
-with the previous call's lines cleared. Every bug that reached a human tester
-lived in a **lifetime** the tests didn't exercise: a policy outliving its
-session, a call leg outliving its browser, a conference outliving nothing at
-all. If you adapt this app, adapt the test too, and make it exercise whole
-lifetimes rather than happy paths.
-
 ## Running the demo
 
-You'll need a jambonz deployment with MediaJam conferencing and the
-conference-listen endpoints (jambonz `main` today), a
+You need jambonz.cloud or a self-hosted jambonz release 11.0.3 or above, a
 [Deepgram](https://deepgram.com) API key for the transcript, and Node 20+.
-Full details live in the repo's
-[DEMO.md](https://github.com/jambonz/room-monitor/blob/main/DEMO.md); here's
-the shape of it.
+Everything else — provisioning the two applications and the webrtc clients (or
+just running `tools/e2e/provision.mjs`), the handful of env vars, and a
+step-by-step runbook — is in the repo's
+[DEMO.md](https://github.com/jambonz/room-monitor/blob/main/DEMO.md).
 
-**1. Provision the account** (portal or the included script):
+To populate a room, the simplest thing is to point **two phone numbers** at the
+caller application — one arriving as an agent, one as a customer. That app
+declares two env vars, `ROOM_NAME` and `ROLE` (`agent` or `caller`), which the
+portal discovers via OPTIONS and shows on the application screen. Since env vars
+belong to the *application*, you create two applications aimed at the same
+websocket endpoint, give them the same `ROOM_NAME`, set `ROLE=agent` on one and
+`ROLE=caller` on the other, and route a DID at each. `ROLE=agent` is the whole
+difference: it adds `memberTag: 'agent'` to the conference verb, which is what
+makes Coach light up. Dial both numbers and you have a live room with a tagged
+agent and a customer in it — no code changes to move them to another room.
 
-- An application named **`room-monitor`**, calling webhook
-  `ws://<backend-host>:3002/supervisor` — serves the console's monitoring leg
-  and the demo phone page.
-- An application named **`room-monitor-caller`**, calling webhook
-  `ws://<backend-host>:4003/caller` — route a **phone number (DID)** at this
-  one. Which room inbound callers land in is the application's **`ROOM_NAME`
-  env var**, declared via OPTIONS discovery so you can edit it right on the
-  portal's application screen. No redeploy to change rooms.
-- Three webrtc clients: `supervisor`, `agent1`, `caller1`.
-
-Or just run `node tools/e2e/provision.mjs` with your account SID and API key
-and let it create all of the above idempotently.
-
-**2. Configure and start the backend:**
-
-```bash
-# apps/server/.env
-PORT=3001                        # data WebSocket for the browser
-JAMBONZ_WS_APP_PORT=3002         # the jambonz application (supervisor + fork sink)
-CALLER_APP_PORT=4003             # the DID caller application
-WEBRTC_SBC_URL=wss://<sbc-host>:8443
-FORK_SINK_URL=ws://<backend-host>:3002/fork   # must be reachable from the media server
-DEEPGRAM_API_KEY=<key>
-
-npm install && npm run dev:server && npm run dev:web
-```
-
-The backend fails fast if anything required is missing, and exposes `/health`
-on every port.
-
-**3. Create some traffic.** The repo gives you three ways:
-
-- **The demo phone page** (`/#phone`) — the fastest path. One browser tab per
-  participant: pick a room, pick **Agent** or **Caller**, join with your real
-  microphone. Share a link like `/#phone?room=customer-support` so everyone
-  lands in the same room (ask us how we learned that lesson).
-
-![The demo phone page: one tab per participant, real microphone audio](./phone-page.png)
-
-- **A real phone** — dial the DID you routed to `room-monitor-caller`. You'll
-  hear "Welcome, joining customer support," and appear in the console.
-- **The traffic kit** (`tools/traffic/`) — sipp scenarios that fill the room
-  list with background rooms, each looping synthesized speech, so the rail
-  looks like a busy floor and the transcript has something to chew on.
-
-**4. Walk the script.** Two phone tabs (one agent, one caller) plus the
-console gives you the whole demo: Listen (they can't hear you) → Coach (the
-agent hears you, the caller doesn't — the one to verify with your own ears) →
-Enter Room (everyone hears you) → transcript on → agent leaves → Coach button
-disappears. The repo includes a ready-to-send
-[three-person test script](https://github.com/jambonz/room-monitor/blob/main/docs/LIVE-TEST.md)
-if you want to rope in friends.
+Then, with the console watching that room, the one step worth doing with your
+own ears is Coach: speak, and the agent's phone hears you while the customer's
+does not. If you want to rope in other people,
+[docs/LIVE-TEST.md](https://github.com/jambonz/room-monitor/blob/main/docs/LIVE-TEST.md)
+is a ready-to-send hand-out for a three-person test.
 
 ## Adapting it into your product
 
-This is the part the app was actually built for. The repo's
+This is a sample application that's intended to be iterated on. The repo's
 [ADAPTING.md](https://github.com/jambonz/room-monitor/blob/main/docs/ADAPTING.md)
 is the full guide; the short version:
 
@@ -429,20 +337,17 @@ are the same mechanism with a different tag.
 
 **Swap the audio consumer.** The transcription module is ~150 lines of "PCM
 in → Deepgram → labelled fragments out." The feed is plain L16 PCM over a
-WebSocket, so that seam is where you'd plug in a different STT vendor, AI
+WebSocket, so that is where you'd plug in a different STT vendor, AI
 supervision (sentiment, compliance phrases, auto-summaries, agent-assist), or
 archival. Choose your scope by what you're building: `members` when you need to
 know who said it (transcripts, agent scoring, real-time assist), `mix` when you
-want the room as one artifact (recording, a single summariser) — and note that
-per-member costs one STT session per participant, which is the honest price of
-attribution.
+want the room audio as one artifact (recording, a single summariser).
 
 **Know the demo shortcuts.** The repo is honest about what's demo-grade:
 there's no auth on the browser WebSocket, credentials are typed per-session
 instead of held server-side, the phone page is a test fixture, room state is
 polled rather than pushed, and nothing is persisted. ADAPTING.md lists each
-one with the exact file where the production fix goes — the goal is that you
-never mistake scaffolding for load-bearing walls.
+one with the exact file where the production fix goes.
 
 ## If you build with an AI assistant
 
