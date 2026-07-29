@@ -22,6 +22,9 @@ participant. To show how it all fits together, we built a complete,
 open-source supervision console:
 **[jambonz/room-monitor](https://github.com/jambonz/room-monitor)**.
 
+<!-- SCREENSHOT (RE-SHOOT — the current one shows "Speaker 1 / Speaker 2", which
+     is now only the fallback). Hero image, also used as the cover: the console
+     while coaching, transcript running with real labels. Blur the account SID. -->
 ![The supervisor console: coaching an agent while the live transcript rolls](./coach-transcript.png)
 
 It's a real application — React front end, Node backend, live-tested with
@@ -63,15 +66,30 @@ Switching between these modes is **instant** — no re-dial, no interruption to
 the room. Under the hood the supervisor holds exactly one call leg, and each
 mode change is a mid-call command on it.
 
-Then there's the **live transcript**: per-room, on-demand, speaker-labelled.
-Two properties matter here. First, it's **independent of listening** — you can
-transcribe a room you're not connected to at all. Second, it respects coach
-privacy: coached audio never appears in it (more on why that's guaranteed, and
-how we proved it, below).
+Then there's the **live transcript**: per-room, on-demand, and labelled with
+who is actually speaking — **"agent"** for anyone carrying the agent tag, the
+**caller's phone number** for everyone else, **"supervisor"** for the
+supervisor's own barge-in. No "Speaker 1 / Speaker 2" guesswork, because the
+media server hands us one audio stream per participant rather than a single
+mixed one. Words appear in a **"being said now"** pane while they are still
+being spoken, then settle into the record above in the order they were
+*spoken* — not the order the speech-to-text engine happened to finish them.
+
+<!-- SCREENSHOT (NEW — placeholder is a plain magenta image): the console
+     mid-call with the transcript running. Ideally shows all three label kinds — an "agent" line, a phone-number line, and
+     grey in-progress text in the "Being said now" pane at the bottom.
+     Blur the account SID in the top-right. -->
+![The live transcript: each participant labelled by role or number, with in-progress speech in the pane below](./transcript-labels.png)
+
+Three properties matter. It is **independent of listening** — you can
+transcribe a room you are not connected to at all. It respects coach privacy:
+what the supervisor whispers to an agent never appears (more on why that is
+guaranteed, and how we proved it, below). And it costs the caller nothing in
+latency, because jambonz is only moving audio.
 
 ## The jambonz primitives underneath
 
-Everything in the app rides on five platform capabilities. If you remember
+Everything in the app rides on six platform capabilities. If you remember
 nothing else from this post, remember this table — it's the stable contract
 your own version builds against.
 
@@ -82,6 +100,7 @@ your own version builds against.
 | Coach / whisper | supervisor audio delivered only to members with a given tag |
 | Barge-in | `uncoach` + unmute |
 | Room audio out | a **conference listen fork**: jambonz streams the room mix to your WebSocket |
+| Per-speaker audio out | the same fork with `scope: "members"` — one identity-tagged stream per participant |
 
 ### Tags drive everything
 
@@ -170,6 +189,42 @@ nothing about transcription**. What sits on the other end of that socket —
 Deepgram in the reference app, but equally your own STT, a sentiment engine,
 compliance phrase detection, or a recorder — is entirely your business.
 
+### One stream per speaker
+
+The mix is the right tap for recording a call. It is the wrong tap for knowing
+*who said what*, and we have the numbers to prove it. Every conference member
+arrives at the media server as G.711, so the mix is always narrowband — and
+speaker diarization on a narrowband mono mix measured **~70–85% word
+attribution** for us across every Deepgram configuration we tried, even with
+clean turn-taking and no crosstalk. Good enough for a demo screenshot; not good
+enough to put a customer's words in an agent's mouth.
+
+So the fork grew a second scope:
+
+```bash
+curl -X POST "$BASE_URL/v1/Accounts/$ACCOUNT_SID/Conferences/support-line/listen" \
+  -H "Authorization: Bearer $API_KEY" -H "Content-Type: application/json" \
+  -d '{"url": "wss://your-host/fork", "scope": "members", "sampleRate": 16000}'
+```
+
+With `scope: "members"` the media server opens **one WebSocket per participant**
+and streams only that participant's own audio down it. Each stream announces
+itself in its first text frame:
+
+```json
+{ "room": "support-line", "memberId": 4, "callSid": "…",
+  "accountSid": "…", "tag": "agent", "sampleRate": 16000 }
+```
+
+Now attribution is a lookup, not a guess: run one STT session per stream with
+diarization switched **off**, and label its output from the identity the stream
+came with. Participants who join later are forked automatically; each fork dies
+with its participant, and the whole policy dies with the room. Two other things
+fall out for free — a member's stream carries what they *say*, never what they
+*hear*, so coaching cannot leak into it by construction; and because the streams
+are separate, the app can gate one of them (the supervisor's) without touching
+the others.
+
 The fork has exactly the lifecycle you'd hope for. It's a media-server-owned
 bot member: excluded from participant counts, never keeps a room alive, torn
 down automatically when the conference ends. Starting it requires no
@@ -190,11 +245,14 @@ One more endpoint rounds out the set — the conferences listing grew an
 ```
 GET /Accounts/{sid}/Conferences?expand=participants
 → [{ id, name, durationSec,
-     participants: [{ call_sid, label, memberTag, isAgent }] }]
+     participants: [{ call_sid, label, number, direction,
+                      memberTag, isAgent }] }]
 ```
 
 That's what feeds the console's room list, and it's how your own tooling can
-answer "which live calls have no agent yet?" in one request.
+answer "which live calls have no agent yet?" in one request. `number` is the
+**remote party** — who called in, or who you dialed — which is what the
+transcript uses to label a participant who isn't an agent.
 
 ## The architecture, in two pipelines
 
@@ -207,14 +265,16 @@ Supervisor media + control                    Transcription
 Browser (WebRTC SDK)                          Backend ──REST──▶ jambonz
   │ SIP over WebSocket                                            │
   ▼                                                               ▼
-jambonz SBC ──▶ supervisor leg in conference          MediaJam conf-bot joins room
+jambonz SBC ──▶ supervisor leg in conference          MediaJam forks each member
   ▲                                                               │
-  │ conf:participant-action (coach/uncoach/mute)                  │ L16 PCM room mix
-  └── injected by the backend over the leg's ws session           ▼
-                                                      Backend WS sink ──▶ Deepgram
-                                                                  │
+  │ conf:participant-action (coach/uncoach/mute)                  │ one L16 stream
+  └── injected by the backend over the leg's ws session           │ per participant
                                                                   ▼
-                                                      speaker-labelled lines → browser
+                                              Backend WS sink ──▶ one STT session each
+                                                                  │ (diarization off)
+                                                                  ▼
+                                                  lines labelled from stream identity,
+                                                  ordered by when they were spoken
 ```
 
 The browser talks to the backend over a small typed WebSocket contract (four
@@ -222,6 +282,32 @@ message types each way), places its media leg with the
 [jambonz WebRTC SDK](https://github.com/jambonz/webrtc-sdk) — routed straight
 to the application via an `X-Application-Sid` header, no dial plan needed —
 and never sees a `call_sid` or an API key doing anything sensitive.
+
+## Making a live transcript feel live
+
+Two problems only show up once you are watching a real conversation scroll past.
+
+**Finals arrive late.** A speech-to-text engine emits a finished line after it
+decides the utterance has ended, which measured at a median **2.35 s** (p90
+4.0 s) from when the person started speaking. So the console publishes *interim*
+results too — and because each stream has exactly one known speaker, they need
+no "unattributed" limbo: they appear immediately, correctly labelled, in a
+**"being said now"** pane pinned below the transcript, then vanish as the
+finished line settles into the record above. Text becomes visible a median
+**1.27 s earlier** that way, and the settled transcript never reflows while you
+are reading it.
+
+<!-- SCREENSHOT (NEW — placeholder is a plain magenta image): close-up of the
+     bottom of the console — the "Being said now" pane with grey in-progress
+     text, and a few settled lines above it. -->
+![In-progress speech appears immediately in its own pane, then settles into the record above](./live-pane.png)
+
+**Per-speaker streams finish out of order.** Each participant has an independent
+STT session, so a long utterance that *started* first can be finalised after a
+short one that started later. Appending in arrival order puts the conversation
+out of sequence — a reply above the thing it replies to. Every line therefore
+carries the wall-clock time its speech *began* (derived from the engine's
+word-level offsets), and the console inserts by that, not by arrival.
 
 ## How we know coach mode actually works
 
@@ -246,8 +332,18 @@ bug where a transcription fork that joined a room *mid-coaching* would hear
 the coached audio (late-joining bots weren't announced, so the coach
 relationships were never re-applied to them). Fixed in the media server, with
 a regression test — and the e2e has verified the contract on every deploy
-since. If you adapt this app, adapt the test too; it will keep verifying *who
-can hear whom* as your code evolves.
+since.
+
+The same harness now also asserts the things that turned out to be easy to get
+wrong: that each line is attributed to the right *identity* (an agent labelled
+by role, a caller by number, the supervisor only when barged in), that the
+displayed timestamps never go backwards, and — the one that bit us hardest —
+that a room which empties and re-forms under the same name keeps transcribing,
+with the previous call's lines cleared. Every bug that reached a human tester
+lived in a **lifetime** the tests didn't exercise: a policy outliving its
+session, a call leg outliving its browser, a conference outliving nothing at
+all. If you adapt this app, adapt the test too, and make it exercise whole
+lifetimes rather than happy paths.
 
 ## Running the demo
 
@@ -331,11 +427,15 @@ your version of it) lights up. Richer taxonomies work too: `speakOnlyTo`
 accepts any tag, so "coach only the trainee" or "whisper to the interpreter"
 are the same mechanism with a different tag.
 
-**Swap the audio consumer.** The transcription module is ~120 lines of "PCM
-in → Deepgram → labelled fragments out." The fork feed is plain L16 PCM over
-a WebSocket, so that seam is where you'd plug in a different STT vendor,
-AI supervision (sentiment, compliance phrases, auto-summaries, agent-assist),
-or archival.
+**Swap the audio consumer.** The transcription module is ~150 lines of "PCM
+in → Deepgram → labelled fragments out." The feed is plain L16 PCM over a
+WebSocket, so that seam is where you'd plug in a different STT vendor, AI
+supervision (sentiment, compliance phrases, auto-summaries, agent-assist), or
+archival. Choose your scope by what you're building: `members` when you need to
+know who said it (transcripts, agent scoring, real-time assist), `mix` when you
+want the room as one artifact (recording, a single summariser) — and note that
+per-member costs one STT session per participant, which is the honest price of
+attribution.
 
 **Know the demo shortcuts.** The repo is honest about what's demo-grade:
 there's no auth on the browser WebSocket, credentials are typed per-session
