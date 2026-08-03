@@ -96,12 +96,12 @@ A few practical notes:
 
 ## Where to Learn More
 
-- The [xAI Grok Voice tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples)
+- The [xAI Grok Voice tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples/x-ai-grok-voice-think-fast-2-0)
   walks through the full setup, including tool calling and events.
 - A complete working example lives in
   [jambonz/v10-examples](https://github.com/jambonz/v10-examples/tree/main/examples/s2s/xai).
-- The [`llm` verb reference](https://docs.jambonz.org/verbs/llm) documents every xAI
-  option, including voices, input transcription, and tool-call routing.
+- The [`llm` verb reference](https://docs.jambonz.org/verbs/verbs/llm#xai-voice-agent)
+  documents every xAI option, including voices, input transcription, and tool-call routing.
 - xAI Voice Agent support ships in jambonz v11's feature-server and mediajam.
 
 As always, come find us in the [jambonz community](https://community.jambonz.org/) with
