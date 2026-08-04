@@ -26,6 +26,18 @@ const blog = defineCollection({
       faq: z
         .array(z.object({ question: z.string(), answer: z.string() }))
         .optional(),
+      // Optional white-paper download. Renders a styled DownloadCard at the top
+      // and bottom of the post. `file` is a path under public/ (e.g. a PDF that
+      // keeps a stable, unhashed URL); `cover` is a co-located image.
+      whitepaper: z
+        .object({
+          title: z.string(),
+          file: z.string(), // e.g. "/whitepapers/name.pdf" (lives in public/)
+          description: z.string().optional(),
+          pages: z.number().optional(),
+          cover: image().optional(),
+        })
+        .optional(),
     }),
 });
 
