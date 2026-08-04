@@ -1,7 +1,7 @@
 ---
 title: "jambonz Adds Speech-to-Speech Support for xAI's Grok Voice Think Fast 2.0"
 date: 2026-08-03
-description: "Connect phone calls to xAI's Grok Voice Think Fast 2.0 with a single verb: a native speech-to-speech model that reasons while it speaks, with a reasoning-effort dial you can turn down when latency matters more than deliberation."
+description: "xAI's Grok Voice Think Fast 2.0 now works with jambonz as a native speech-to-speech vendor. Connect phone calls with one verb and a reasoning-effort dial."
 author: "Dave Horton"
 tags: ["voice-ai", "grok", "xai", "s2s", "speech-to-speech", "llm"]
 faq:
@@ -24,28 +24,28 @@ faq:
 We're happy to announce that [jambonz](https://jambonz.org/) supports xAI's
 **Grok Voice Think Fast 2.0** as a first-class speech-to-speech vendor. If you run
 [jambonz v11](https://jambonz.org/blog/jambonz-v11-release) or later with the mediajam
-media engine, you can connect any phone call to a Grok voice agent with a single verb.
+media engine, you can connect any phone call to a [Grok voice agent](https://docs.jambonz.org/guides/features/bring-your-own-llm/x-ai-grok) with a single verb.
 
-## Why Grok Voice Think Fast 2.0 Matters for Voice Agents
+## Grok Voice Brings Speech-to-Speech Reasoning to Voice AI Agents
 
 [Grok Voice](https://docs.x.ai/developers/model-capabilities/audio/speech-to-speech) is a
 *native* speech-to-speech model: one model listens, reasons, and speaks over a single
 persistent connection. xAI's pitch for the 2.0 generation is that it reasons *while* it
-talks — so a tool call can fire before the agent has finished its first sentence, instead
-of after a visible pause — along with better transcription accuracy and a more natural
+talks, so a tool call can fire before the agent has finished its first sentence, instead
+of after a visible pause, along with better transcription accuracy and a more natural
 conversational feel than the 1.0 models.
 
 The part we find most interesting for telephony is a setting the other vendors don't
 expose: **`reasoning.effort`**, which takes `high` (the default) or `none`. That is an
-explicit dial for the tradeoff every voice-agent developer ends up making by hand —
-deliberation versus latency — and it can be set per session, so a support flow that
+explicit dial for the tradeoff every voice-agent developer ends up making by hand
+(deliberation versus latency) and it can be set per session, so a support flow that
 reasons over tool output and a high-volume "where's my order" flow can use the same model
 with different characters.
 
 ## How to Add Grok Voice to a jambonz Call
 
 If you've used the [OpenAI Realtime API with jambonz](https://docs.jambonz.org/tutorials/voice-ai-examples/open-ai-realtime-api),
-this will feel instantly familiar — xAI speaks an OpenAI-Realtime dialect, and jambonz
+this will feel instantly familiar. xAI speaks an OpenAI-Realtime dialect, and jambonz
 exposes it the same way. Here's a minimal application using the
 [@jambonz/sdk](https://www.npmjs.com/package/@jambonz/sdk) WebSocket interface:
 
@@ -82,9 +82,9 @@ session
 A few practical notes:
 
 - **Pin the model.** Name `grok-voice-think-fast-2.0` explicitly rather than leaning on
-  the `grok-voice-latest` alias — that keeps your agent's behavior from shifting the next
+  the `grok-voice-latest` alias. That keeps your agent's behavior from shifting the next
   time xAI repoints the alias at a new generation.
-- **`session_update` is required.** Unlike OpenAI, xAI gates audio until it has received
+- **`session_update` is required.** Unlike [OpenAI](https://docs.jambonz.org/guides/features/bring-your-own-llm/open-ai), xAI gates audio until it has received
   your first `session.update` and replied with `session.updated`, so there is no
   "connect and start talking" path.
 - **`turn_detection` is top-level.** OpenAI GA nests it under
@@ -94,7 +94,7 @@ A few practical notes:
 - **Don't set audio formats.** The wire format to xAI is pcm16 at 24 kHz and jambonz
   forces it, so anything you declare in `session_update.audio.*.format` is overridden.
 
-## Where to Learn More
+## xAI Grok Voice Documentation and Resources
 
 - The [xAI Grok Voice tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples/x-ai-grok-voice-think-fast-2-0)
   walks through the full setup, including tool calling and events.
