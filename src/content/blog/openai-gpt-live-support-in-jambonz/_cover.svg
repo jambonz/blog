@@ -39,18 +39,19 @@
     <text xml:space="preserve" x="30" y="352"><tspan class="ln">11 </tspan><tspan class="brace">}</tspan></text>
   </g>
 
-  <!-- right code column: the five client events -->
+  <!-- right code column: the six client events -->
   <g class="code" opacity="0.62">
-    <text xml:space="preserve" x="1160" y="52"><tspan class="c">// 5 client events. that's all.</tspan></text>
+    <text xml:space="preserve" x="1160" y="52"><tspan class="c">// 6 client events. that's all.</tspan></text>
     <text xml:space="preserve" x="1160" y="82"><tspan class="ln">1  </tspan><tspan class="s">session.update</tspan></text>
-    <text xml:space="preserve" x="1160" y="112"><tspan class="ln">2  </tspan><tspan class="s">session.context.append</tspan></text>
-    <text xml:space="preserve" x="1160" y="142"><tspan class="ln">3  </tspan><tspan class="s">delegation.context.append</tspan></text>
-    <text xml:space="preserve" x="1160" y="172"><tspan class="ln">4  </tspan><tspan class="s">delegation.function_</tspan></text>
-    <text xml:space="preserve" x="1160" y="202"><tspan class="ln">   </tspan><tspan class="s">  call_output.create</tspan></text>
-    <text xml:space="preserve" x="1160" y="232"><tspan class="ln">5  </tspan><tspan class="s">session.close</tspan></text>
-    <text xml:space="preserve" x="1160" y="292"><tspan class="c">// no response.create</tspan></text>
-    <text xml:space="preserve" x="1160" y="322"><tspan class="c">// no response.cancel</tspan></text>
-    <text xml:space="preserve" x="1160" y="352"><tspan class="c">// no turn_detection</tspan></text>
+    <text xml:space="preserve" x="1160" y="112"><tspan class="ln">2  </tspan><tspan class="s">input_audio.append</tspan></text>
+    <text xml:space="preserve" x="1160" y="142"><tspan class="ln">3  </tspan><tspan class="s">session.context.append</tspan></text>
+    <text xml:space="preserve" x="1160" y="172"><tspan class="ln">4  </tspan><tspan class="s">delegation.context.append</tspan></text>
+    <text xml:space="preserve" x="1160" y="202"><tspan class="ln">5  </tspan><tspan class="s">delegation.function_</tspan></text>
+    <text xml:space="preserve" x="1160" y="232"><tspan class="ln">   </tspan><tspan class="s">  call_output.create</tspan></text>
+    <text xml:space="preserve" x="1160" y="262"><tspan class="ln">6  </tspan><tspan class="s">session.close</tspan></text>
+    <text xml:space="preserve" x="1160" y="322"><tspan class="c">// no response.create</tspan></text>
+    <text xml:space="preserve" x="1160" y="352"><tspan class="c">// no response.cancel</tspan></text>
+    <text xml:space="preserve" x="1160" y="382"><tspan class="c">// no turn_detection</tspan></text>
   </g>
 
   <!-- title -->
