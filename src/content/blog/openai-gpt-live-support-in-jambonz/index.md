@@ -1,19 +1,19 @@
 ---
-title: "jambonz Supports OpenAI's GPT Live Alpha for Full-Duplex Voice Agents"
+title: "jambonz Supports OpenAI's GPT Live for Full-Duplex Voice Agents"
 date: 2026-08-05
-description: "OpenAI's GPT Live API is a full-duplex speech-to-speech model with a brand new wire protocol. jambonz supports it today, and if you have alpha access you can point a phone number at it on jambonz.cloud right now."
+description: "OpenAI's GPT Live API is a full-duplex speech-to-speech model with a brand new wire protocol. jambonz supports it as a native s2s vendor — point a phone number at it on jambonz.cloud and start from working code."
 author: "Dave Horton"
 tags: ["voice-ai", "openai", "gpt-live", "s2s", "speech-to-speech", "llm"]
 coverImage: "./cover.png"
 faq:
   - question: "What is OpenAI GPT Live?"
-    answer: "GPT Live is OpenAI's full-duplex voice model family, announced in July 2026 and built around listening and speaking at the same time rather than trading turns. It backchannels ('mhmm', 'yeah'), can stay quiet while the caller thinks, and hands hard questions off to a larger reasoning model in the background while the conversation keeps going. The API is a limited-access alpha; the model jambonz defaults to is gpt-live-1-boulder-alpha."
-  - question: "Do I need special access to use GPT Live with jambonz?"
-    answer: "Yes. Your OpenAI API key has to be enrolled in OpenAI's Early Access Program for GPT Live. A key without enrollment completes the WebSocket handshake and is then refused at the application layer with a 'Voice session access denied' error, which can look like a jambonz problem but isn't. jambonz support for GPT Live is done and shipping regardless — if you have the alpha, jambonz.cloud will connect a phone call to it today."
+    answer: "GPT Live is OpenAI's full-duplex voice model family, announced in July 2026 and built around listening and speaking at the same time rather than trading turns. It backchannels ('mhmm', 'yeah'), can stay quiet while the caller thinks, and hands hard questions off to a larger reasoning model in the background while the conversation keeps going. jambonz supports it as a native speech-to-speech vendor, so a phone call can talk to it directly."
+  - question: "Do I need special access from OpenAI to use GPT Live?"
+    answer: "While OpenAI runs GPT Live as a limited-access alpha, yes: your OpenAI API key has to be enrolled in their Early Access Program. An unenrolled key completes the WebSocket handshake and is then refused at the application layer with 'Voice session access denied', which can look like a jambonz problem but isn't. jambonz support is finished and shipping either way, so nothing changes on our side when OpenAI opens access up."
   - question: "Is GPT Live the same API as the OpenAI Realtime API?"
     answer: "No. Both are served from api.openai.com, but GPT Live is a different wire protocol on a different endpoint (/v1/live rather than /v1/realtime) with a different event vocabulary. GPT Live accepts exactly five client events: session.update, session.context.append, delegation.context.append, delegation.function_call_output.create and session.close. There is no response.create, no response.cancel, no input_audio_buffer.append and no turn_detection configuration. In jambonz they are separate vendors — 'gptlive' and 'openai' — and separate verbs, gptlive_s2s and openai_s2s."
   - question: "How do I migrate a jambonz OpenAI Realtime app to GPT Live?"
-    answer: "Change vendor to 'gptlive', set model on the verb itself (not inside session_update — the model travels in the connection URL), drop response_create entirely, drop turn_detection and audio format settings, and move your tools from session_update.tools to session_update.delegation.responses.tools with delegation.type set to 'responses'. The verb, hooks, and overall application shape are otherwise unchanged."
+    answer: "Change vendor to 'gptlive', set model on the verb itself (not inside session_update — the model travels in the connection URL), drop response_create entirely, drop turn_detection and audio format settings, and move your tools from session_update.tools to session_update.delegation.responses.tools with delegation.type set to 'responses'. Your verb, your hooks, and how your application is put together are otherwise unchanged."
   - question: "How does the agent speak first if there is no response.create?"
     answer: "GPT Live drives the conversation itself, so there is no client event that solicits a turn. Putting the greeting in instructions is not reliable. The working pattern is to send a session.context.append on the session.started event that tells the model both the wording and when to say it. Note that OpenAI treats a context append as guidance rather than a playback command — the model may paraphrase or stay silent — so if you need exact wording, play it with jambonz's own say or play verb instead."
   - question: "What is a delegation?"
@@ -23,20 +23,30 @@ faq:
   - question: "Do I need to configure audio formats or codecs?"
     answer: "No. GPT Live is fixed at 24 kHz mono pcm16 in both directions, and jambonz transcodes to and from whatever the call is actually using. Unlike the Realtime API, there is nothing to negotiate."
   - question: "Which jambonz version do I need?"
-    answer: "GPT Live support requires jambonz v11.0.4 or later with the mediajam media engine. jambonz.cloud is already running it, which is the fastest way to try the alpha against a real phone call."
+    answer: "GPT Live support requires jambonz v11.0.4 or later with the mediajam media engine. jambonz.cloud is already running it, which is the fastest way to try GPT Live against a real phone call."
 ---
 
 OpenAI's [GPT Live](https://openai.com/index/introducing-gpt-live/) API is a genuinely
 different animal from the Realtime API that preceded it, and [jambonz](https://jambonz.org/)
 supports it as a first-class speech-to-speech vendor today.
 
-**One thing to get out of the way first: GPT Live is a limited-access alpha, and you cannot
-try it — with jambonz or anything else — unless your OpenAI API key is enrolled in OpenAI's
-Early Access Program for it.** A key that isn't enrolled will connect and then be refused.
-That gate is OpenAI's, not ours: jambonz support is finished and shipping. So if you *are*
-in the alpha, you can point a phone number at GPT Live on
-[jambonz.cloud](https://jambonz.cloud) and be talking to it in a few minutes — and if you
-aren't yet, everything below is what will be waiting for you when you get in.
+> ### Start from working code
+>
+> If you'd rather read a running application than a blog post, go straight to the
+> **[complete GPT Live example app](https://github.com/jambonz/v10-examples/tree/main/examples/s2s/gptlive)**
+> in `jambonz/v10-examples`. It's a full TypeScript agent — both delegation modes behind one
+> environment variable, a real `get_weather` tool wired to Open-Meteo, and the greeting and
+> event handling already sorted out. Clone it, drop in your API key, and point a jambonz
+> application at it. The
+> [GPT Live tutorial](https://docs.jambonz.org/tutorials/voice-ai-examples/open-ai-gpt-live)
+> walks through the same code line by line.
+
+**One practical note before you start:** OpenAI is currently running GPT Live as a
+limited-access alpha, so you'll need an API key enrolled in their Early Access Program. An
+unenrolled key connects and is then refused. That restriction is OpenAI's, not ours —
+jambonz support is finished and shipping, and nothing changes on our side when access opens
+up. If you're already in, you can point a phone number at GPT Live on
+[jambonz.cloud](https://jambonz.cloud) and be talking to it in a few minutes.
 
 ## GPT Live Is Full-Duplex, Not Turn-Based
 
@@ -52,8 +62,8 @@ If you build phone agents for a living, that last point is the interesting one. 
 silence after "let me look that up for you" is the single most common complaint about voice
 AI, and GPT Live's answer is architectural rather than a prompt trick.
 
-The flip side of the model driving the conversation is that a lot of the control surface
-you're used to simply isn't there. There is no `response.create` to solicit a turn, no
+The flip side of the model driving the conversation is that a lot of the controls you're
+used to reaching for simply aren't there. There is no `response.create` to solicit a turn, no
 `response.cancel` to interrupt one, and no `turn_detection` to tune. GPT Live accepts
 exactly five client events. That's a real shift in how you write the application, which is
 why we treated it as a separate vendor rather than a mode of the existing OpenAI
@@ -67,7 +77,7 @@ Set `vendor: 'gptlive'` on the `s2s` verb and you're most of the way there:
 session.s2s({
   vendor: 'gptlive',
   // the model travels in the connection URL, so it goes here, not in session_update
-  model: 'gpt-live-1-boulder-alpha',
+  model: 'gpt-live-1-boulder-alpha', // check OpenAI's docs for the current model name
   auth: { apiKey: process.env.GPTLIVE_API_KEY },
   llmOptions: {
     session_update: {
@@ -99,8 +109,8 @@ A few things worth knowing before you write that:
   handles the transcoding.
 - **Tools live under `delegation`.** Function calling requires
   `delegation.type: 'responses'` with `delegation.responses.model` set, and the tools go at
-  `delegation.responses.tools` in the flat Responses shape. Tools at the top level (where
-  the Realtime API puts them) are rejected at session start.
+  `delegation.responses.tools` using the flat Responses function format. Tools at the top
+  level (where the Realtime API puts them) are rejected at session start.
 
 ## Delegations Are the New Concept
 
@@ -109,7 +119,7 @@ idea that has no Realtime API equivalent, and it's worth understanding before yo
 your agent.
 
 When the voice model decides it needs something it can't produce on its own, it *delegates*.
-Which shape that takes is your choice:
+How it asks is your choice:
 
 **`delegation.type: 'client'`** — the model asks your application, in prose, for context
 ("what is this caller's account balance?"), and you answer in prose with a
@@ -137,7 +147,7 @@ here's the whole diff:
 | endpoint | `/v1/realtime` | `/v1/live` |
 | soliciting a turn | `response_create` | *(none — the model self-drives)* |
 | cancelling a turn | `response.cancel` | *(none — playout is flushed)* |
-| audio gate lifts on | first `session.updated` | `session.started` |
+| caller audio starts flowing after | first `session.updated` | `session.started` |
 | caller speech signal | `input_audio_buffer.speech_started` | `turn.created`, `role: "user"` |
 | turn detection | configurable | built in, not configurable |
 | audio format | negotiable | fixed pcm16 mono 24 kHz |
@@ -145,7 +155,7 @@ here's the whole diff:
 | tool results | `conversation.item.create` + `response.create` | `delegation.function_call_output.create` |
 | model name goes | in `session_update` | on the verb |
 
-Your verb, your hooks, and the overall shape of your application don't change. What changes
+Your verb, your hooks, and how your application is put together don't change. What changes
 is that you stop orchestrating turns and let the model do it.
 
 ## GPT Live Documentation and Resources
@@ -159,10 +169,10 @@ is that you stop orchestrating turns and let the model do it.
 - GPT Live support ships in jambonz v11.0.4 and later, and is live on
   [jambonz.cloud](https://jambonz.cloud) now.
 
-And to restate the access gate in the form you'll actually hit it: an OpenAI key that isn't
-enrolled in the alpha completes the WebSocket handshake successfully and is *then* refused
-at the application layer with `Voice session access denied`. Because the connection comes up
-first, this reads like a jambonz bug. It isn't — it means the key needs alpha enrollment.
+One error worth recognizing on sight: if your OpenAI key lacks access, the WebSocket
+handshake *succeeds* and the session is refused immediately afterward with
+`Voice session access denied`. Because the connection comes up first, it reads like a jambonz
+bug. It isn't — it means the key needs to be enrolled with OpenAI.
 
 As always, come find us in the [jambonz community](https://community.jambonz.org/) with
 questions — we'd love to hear what you build with it.
