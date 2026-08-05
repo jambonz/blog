@@ -8,15 +8,6 @@ whitepaper:
   title: "jambonz Outperforms LiveKit 10x in Voice AI Concurrency"
   file: "/whitepapers/jambonz-vs-livekit-voice-ai-benchmark.pdf"
   description: "All eleven configurations tested, latency analysis, cost derivation, and every limitation we found in our own methodology."
-faq:
-  - question: "How many concurrent voice AI sessions can jambonz and LiveKit handle?"
-    answer: "On one 8-vCPU instance, jambonz sustained 250 concurrent voice-agent sessions and LiveKit sustained 25 — about 31 sessions per vCPU against 3, a tenfold difference, measured against the same quality bar of under 0.5% failed calls and turn latency within 25% of baseline."
-  - question: "Why does LiveKit use more CPU per call than jambonz?"
-    answer: "LiveKit forks a dedicated process for every call, while jambonz runs one shared media server process that carries every call on the box. Per-process sampling shows roughly 0.11 CPU cores per session for LiveKit against about 0.014 for jambonz — an eight-fold difference in the cost of carrying one call."
-  - question: "Does turn detection explain the difference?"
-    answer: "No. We removed turn detection as a variable by routing both platforms through the same off-box turn events. jambonz's ceiling more than doubled once its native detector was removed; LiveKit's ceiling didn't move."
-  - question: "Is LiveKit a poor choice for voice AI?"
-    answer: "No. LiveKit does things jambonz doesn't, including video, multi-party rooms, and browser and mobile SDKs, none of which were tested here. Below roughly 100 concurrent sessions the compute gap won't matter much."
 ---
 
 If you're running [voice AI agents on your own infrastructure](https://jambonz.org/self-hosting), the question that matters is simple: **How many concurrent calls can one server handle before it falls over?**
