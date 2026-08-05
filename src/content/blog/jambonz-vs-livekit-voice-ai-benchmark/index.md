@@ -4,7 +4,6 @@ date: 2026-07-08
 description: "A reproducible voice AI scalability benchmark measures how many concurrent voice AI calls jambonz and LiveKit sustain on identical hardware."
 author: "Dave Horton"
 tags: ["benchmarks", "livekit", "voice-ai", "scalability", "self-hosting"]
-draft: true
 whitepaper:
   title: "jambonz vs LiveKit: A Voice AI Scalability Benchmark"
   file: "/whitepapers/jambonz-vs-livekit-voice-ai-benchmark.pdf"
