@@ -11,7 +11,7 @@ faq:
   - question: "Do I need special access from OpenAI to use GPT Live?"
     answer: "While OpenAI runs GPT Live as a limited-access alpha, yes: your OpenAI API key has to be enrolled in their Early Access Program. An unenrolled key completes the WebSocket handshake and is then refused at the application layer with 'Voice session access denied', which can look like a jambonz problem but isn't. jambonz support is finished and shipping either way, so nothing changes on our side when OpenAI opens access up."
   - question: "Is GPT Live the same API as the OpenAI Realtime API?"
-    answer: "No. Both are served from api.openai.com, but GPT Live is a different wire protocol on a different endpoint (/v1/live rather than /v1/realtime) with a different event vocabulary. GPT Live accepts exactly five client events: session.update, session.context.append, delegation.context.append, delegation.function_call_output.create and session.close. There is no response.create, no response.cancel, no input_audio_buffer.append and no turn_detection configuration. In jambonz they are separate vendors ('gptlive' and 'openai') and separate verbs, gptlive_s2s and openai_s2s."
+    answer: "No. Both are served from api.openai.com, but GPT Live is a different wire protocol on a different endpoint (/v1/live rather than /v1/realtime) with a different event vocabulary. GPT Live accepts exactly six client events: session.update, input_audio.append, session.context.append, delegation.context.append, delegation.function_call_output.create and session.close. There is no response.create, no response.cancel and no turn_detection configuration, and caller audio arrives on input_audio.append rather than the Realtime API's input_audio_buffer.append. In jambonz they are separate vendors ('gptlive' and 'openai') and separate verbs, gptlive_s2s and openai_s2s."
   - question: "How do I migrate a jambonz OpenAI Realtime app to GPT Live?"
     answer: "Change vendor to 'gptlive', set model on the verb itself (not inside session_update — the model travels in the connection URL), drop response_create entirely, drop turn_detection and audio format settings, and move your tools from session_update.tools to session_update.delegation.responses.tools with delegation.type set to 'responses'. Your verb, your hooks, and how your application is put together are otherwise unchanged."
   - question: "How does the agent speak first if there is no response.create?"
@@ -61,10 +61,10 @@ If you build phone [agents](https://jambonz.org/blog/voice-agent-handoff) for a 
 silence after "let me look that up for you" is the single most common complaint about voice
 AI, and GPT Live's answer is architectural rather than a prompt trick.
 
-The flip side of the model driving the conversation is that a lot of the controls you're
-used to reaching for simply aren't there. There is no `response.create` to solicit a turn, no
-`response.cancel` to interrupt one, and no `turn_detection` to tune. GPT Live accepts
-exactly five client events. That's a shift in how you write the application, which is
+The flip side of the model driving the conversation is that a lot of the controls an
+OpenAI Realtime developer reaches for simply aren't there. There is no `response.create` to
+solicit a turn, no `response.cancel` to interrupt one, and no `turn_detection` to tune. GPT
+Live accepts exactly six client events, one of which is just audio. That's a shift in how you write the application, which is
 why we treated it as a separate vendor rather than a mode of the [existing OpenAI
 integration](https://docs.jambonz.org/guides/features/bring-your-own-llm/open-ai).
 
