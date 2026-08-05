@@ -1,15 +1,36 @@
 ---
 import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ChartCard from '../components/ChartCard.astro';
 import { url } from '../utils/url';
 import { getPosts } from '../utils/posts';
 
 const posts = await getPosts();
+
+// Headline result from the LiveKit benchmark, surfaced above the listing.
+const benchmark = {
+  slug: 'jambonz-vs-livekit-voice-ai-benchmark',
+  bars: [
+    { label: 'jambonz', value: 250 },
+    { label: 'LiveKit', value: 25 },
+  ],
+};
+const hasBenchmark = posts.some((p) => p.id === benchmark.slug);
 ---
 
 <BaseLayout title="jambonz blog" description="Engineering notes and product updates from the jambonz team.">
   <main class="index">
     <h1>Blog</h1>
+    {hasBenchmark && (
+      <ChartCard
+        eyebrow="Benchmark"
+        title="jambonz sustained 10x the concurrent voice AI sessions of LiveKit"
+        href={url(benchmark.slug)}
+        bars={benchmark.bars}
+        caption="Concurrent voice-agent sessions on one 8-vCPU instance, held to the same quality bar: under 0.5% failed calls and turn latency within 25% of baseline."
+        cta="Read the benchmark"
+      />
+    )}
     <ul class="posts">
       {posts.map((post) => {
         const formattedDate = post.data.date.toLocaleDateString('en-US', {
@@ -53,7 +74,7 @@ const posts = await getPosts();
   .posts {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: var(--space-xl) 0 0;
   }
 
   .posts li {
