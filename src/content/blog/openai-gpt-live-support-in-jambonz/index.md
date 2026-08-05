@@ -4,6 +4,7 @@ date: 2026-08-05
 description: "OpenAI's GPT Live API is a full-duplex speech-to-speech model with a brand new wire protocol. jambonz supports it today, and if you have alpha access you can point a phone number at it on jambonz.cloud right now."
 author: "Dave Horton"
 tags: ["voice-ai", "openai", "gpt-live", "s2s", "speech-to-speech", "llm"]
+coverImage: "./cover.png"
 faq:
   - question: "What is OpenAI GPT Live?"
     answer: "GPT Live is OpenAI's full-duplex voice model family, announced in July 2026 and built around listening and speaking at the same time rather than trading turns. It backchannels ('mhmm', 'yeah'), can stay quiet while the caller thinks, and hands hard questions off to a larger reasoning model in the background while the conversation keeps going. The API is a limited-access alpha; the model jambonz defaults to is gpt-live-1-boulder-alpha."
@@ -22,14 +23,20 @@ faq:
   - question: "Do I need to configure audio formats or codecs?"
     answer: "No. GPT Live is fixed at 24 kHz mono pcm16 in both directions, and jambonz transcodes to and from whatever the call is actually using. Unlike the Realtime API, there is nothing to negotiate."
   - question: "Which jambonz version do I need?"
-    answer: "GPT Live support requires jambonz v11.1.0 or later with the mediajam media engine. jambonz.cloud is already running it, which is the fastest way to try the alpha against a real phone call."
+    answer: "GPT Live support requires jambonz v11.0.4 or later with the mediajam media engine. jambonz.cloud is already running it, which is the fastest way to try the alpha against a real phone call."
 ---
 
 OpenAI's [GPT Live](https://openai.com/index/introducing-gpt-live/) API is a genuinely
 different animal from the Realtime API that preceded it, and [jambonz](https://jambonz.org/)
-supports it as a first-class speech-to-speech vendor today. The API is still a
-limited-access alpha — but if your OpenAI key is enrolled, you can point a phone number at
-GPT Live on [jambonz.cloud](https://jambonz.cloud) and be talking to it in a few minutes.
+supports it as a first-class speech-to-speech vendor today.
+
+**One thing to get out of the way first: GPT Live is a limited-access alpha, and you cannot
+try it — with jambonz or anything else — unless your OpenAI API key is enrolled in OpenAI's
+Early Access Program for it.** A key that isn't enrolled will connect and then be refused.
+That gate is OpenAI's, not ours: jambonz support is finished and shipping. So if you *are*
+in the alpha, you can point a phone number at GPT Live on
+[jambonz.cloud](https://jambonz.cloud) and be talking to it in a few minutes — and if you
+aren't yet, everything below is what will be waiting for you when you get in.
 
 ## GPT Live Is Full-Duplex, Not Turn-Based
 
@@ -149,12 +156,13 @@ is that you stop orchestrating turns and let the model do it.
   [jambonz/v10-examples](https://github.com/jambonz/v10-examples/tree/main/examples/s2s/gptlive).
 - The [`llm` verb reference](https://docs.jambonz.org/verbs/verbs/llm) documents every GPT
   Live option, event, and delegation field.
-- GPT Live support ships in jambonz v11.1.0 and later, and is live on
+- GPT Live support ships in jambonz v11.0.4 and later, and is live on
   [jambonz.cloud](https://jambonz.cloud) now.
 
-One caveat that will save you an afternoon: an OpenAI key that isn't enrolled in the alpha
-will complete the WebSocket handshake and *then* be refused with
-`Voice session access denied`. That's OpenAI's gate, not ours.
+And to restate the access gate in the form you'll actually hit it: an OpenAI key that isn't
+enrolled in the alpha completes the WebSocket handshake successfully and is *then* refused
+at the application layer with `Voice session access denied`. Because the connection comes up
+first, this reads like a jambonz bug. It isn't — it means the key needs alpha enrollment.
 
 As always, come find us in the [jambonz community](https://community.jambonz.org/) with
 questions — we'd love to hear what you build with it.
