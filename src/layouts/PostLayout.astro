@@ -3,6 +3,7 @@ import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
 import DownloadCard from '../components/DownloadCard.astro';
+import { url } from '../utils/url';
 
 interface Props {
   title: string;
@@ -12,6 +13,8 @@ interface Props {
   author?: string;
   tags?: string[];
   coverImage?: ImageMetadata;
+  /** Social card override: a filename in public/, e.g. 'og-benchmark.jpg'. */
+  ogImage?: string;
   canonicalUrl?: string;
   faq?: { question: string; answer: string }[];
   whitepaper?: {
@@ -23,8 +26,12 @@ interface Props {
   };
 }
 
-const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl, faq, whitepaper } =
+const { title, date, updatedDate, description, author, tags = [], coverImage, ogImage, canonicalUrl, faq, whitepaper } =
   Astro.props;
+
+// An explicit ogImage wins; otherwise fall back to the cover, then to the
+// site-wide default card handled in BaseLayout.
+const socialCard = ogImage ? url(ogImage) : coverImage?.src;
 
 // Dates in frontmatter are date-only; coerced to UTC midnight. Format in UTC so
 // they don't drift a day backward for readers/builders behind UTC.
@@ -41,7 +48,7 @@ const fmt = (d: Date) =>
   title={title}
   description={description}
   canonical={canonicalUrl}
-  ogImage={coverImage?.src}
+  ogImage={socialCard}
   article={{
     publishedTime: date.toISOString(),
     modifiedTime: updatedDate?.toISOString(),
