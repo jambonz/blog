@@ -18,6 +18,9 @@ const blog = defineCollection({
       tags: z.array(z.string()).default([]),
       // Co-located cover image (./cover.png) optimized by Astro, or a remote URL.
       coverImage: image().optional(),
+      // Social card override: a file in public/, e.g. 'og-benchmark.jpg'. Use
+      // when the card should differ from coverImage (or there is no cover).
+      ogImage: z.string().optional(),
       // Original Hashnode URL — emitted as <link rel="canonical"> to preserve SEO.
       canonicalUrl: z.string().url().optional(),
       draft: z.boolean().default(false),
