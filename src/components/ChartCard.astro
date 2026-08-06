@@ -1,0 +1,150 @@
+---
+/**
+ * A small horizontal bar chart in a card, used to surface a headline result
+ * on the post listing. Bars are direct-labelled, so identity and magnitude are
+ * never colour-alone; colours come from the --chart-* tokens in BaseLayout.
+ */
+interface Bar {
+  label: string;
+  value: number;
+  /** Optional display form of the value (defaults to the number itself). */
+  display?: string;
+}
+
+interface Props {
+  eyebrow?: string;
+  title: string;
+  /** Where the card links to (already base-prefixed). */
+  href: string;
+  caption?: string;
+  cta?: string;
+  bars: Bar[];
+}
+
+const { eyebrow, title, href, caption, cta, bars } = Astro.props;
+
+const max = Math.max(...bars.map((b) => b.value));
+---
+
+<a class="chart-card" href={href}>
+  {eyebrow && <p class="eyebrow">{eyebrow}</p>}
+  <p class="title">{title}</p>
+
+  <div class="chart">
+    {bars.map((bar, i) => (
+      <div class="row">
+        <span class="name">{bar.label}</span>
+        <div class="track">
+          <div
+            class="bar"
+            data-series={i === 0 ? 'a' : 'b'}
+            style={`width: ${Math.max((bar.value / max) * 100, 1.5)}%`}
+          />
+        </div>
+        <span class="value">{bar.display ?? bar.value}</span>
+      </div>
+    ))}
+  </div>
+
+  {caption && <p class="caption">{caption}</p>}
+  {cta && <span class="cta">{cta} &rarr;</span>}
+</a>
+
+<style>
+  .chart-card {
+    display: block;
+    padding: var(--space-lg);
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-code-bg);
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-link);
+  }
+
+  .title {
+    margin: var(--space-xs) 0 var(--space-md);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--color-text);
+    transition: color 0.15s;
+  }
+
+  .chart-card:hover .title,
+  .chart-card:hover .cta {
+    color: var(--color-link);
+  }
+
+  .chart {
+    display: grid;
+    gap: var(--space-sm);
+  }
+
+  .row {
+    display: grid;
+    grid-template-columns: 7rem 1fr 3rem;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .name {
+    font-size: 0.875rem;
+    color: var(--color-text);
+  }
+
+  .track {
+    height: 14px;
+  }
+
+  .bar {
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .bar[data-series='a'] {
+    background: var(--chart-a);
+  }
+
+  .bar[data-series='b'] {
+    background: var(--chart-b);
+  }
+
+  .value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-align: right;
+    color: var(--color-text);
+  }
+
+  .caption {
+    margin: var(--space-md) 0 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--color-text-muted);
+  }
+
+  .cta {
+    display: inline-block;
+    margin-top: var(--space-sm);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--color-link);
+    transition: color 0.15s;
+  }
+
+  @media (max-width: 30rem) {
+    .row {
+      grid-template-columns: 5rem 1fr 2.5rem;
+    }
+  }
+</style>

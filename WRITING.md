@@ -82,6 +82,21 @@ Use lowercase words separated by hyphens for the folder name — no spaces.
      - question: "Is jambonz open source?"
        answer: "Yes, under the MIT license."
    ```
+
+   **Optional — promote a white paper.** To offer a downloadable PDF, add a
+   `whitepaper` block. It renders a professional download card at the **top and
+   bottom** of the post (the file size is filled in automatically). Upload the PDF
+   to the repo's `public/whitepapers/` folder, and put a cover image in this
+   post's own folder:
+
+   ```yaml
+   whitepaper:
+     title: "The State of Open-Source Voice AI in 2026"
+     file: "/whitepapers/state-of-voice-ai-2026.pdf"   # PDF in public/whitepapers/
+     description: "One line on what's inside."
+     pages: 12                                          # optional
+     cover: ./whitepaper-cover.png                      # image in this post's folder
+   ```
 5. Scroll down to **Commit new file**. Choose **"Create a new branch for this
    commit and start a pull request"**, then click **Propose new file**, and on
    the next screen **Create pull request**.

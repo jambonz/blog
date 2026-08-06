@@ -2,6 +2,7 @@
 import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
+import DownloadCard from '../components/DownloadCard.astro';
 
 interface Props {
   title: string;
@@ -13,9 +14,16 @@ interface Props {
   coverImage?: ImageMetadata;
   canonicalUrl?: string;
   faq?: { question: string; answer: string }[];
+  whitepaper?: {
+    title: string;
+    file: string;
+    description?: string;
+    pages?: number;
+    cover?: ImageMetadata;
+  };
 }
 
-const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl, faq } =
+const { title, date, updatedDate, description, author, tags = [], coverImage, canonicalUrl, faq, whitepaper } =
   Astro.props;
 
 // Dates in frontmatter are date-only; coerced to UTC midnight. Format in UTC so
@@ -59,6 +67,7 @@ const fmt = (d: Date) =>
     {coverImage && (
       <Image class="cover" src={coverImage} alt={title} widths={[480, 800, 1200]} sizes="(max-width: 70ch) 100vw, 70ch" loading="eager" />
     )}
+    {whitepaper && <DownloadCard {...whitepaper} />}
     <div class="prose">
       <slot />
     </div>
@@ -73,6 +82,7 @@ const fmt = (d: Date) =>
         ))}
       </section>
     )}
+    {whitepaper && <DownloadCard {...whitepaper} />}
   </article>
 </BaseLayout>
 
