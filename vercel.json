@@ -2,6 +2,27 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "outputDirectory": "dist",
   "redirects": [
+    { "source": "/why-were-introducing-a-commercial-license", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/why-were-introducing-a-commercial-license", "permanent": true },
+    { "source": "/how-to-stream-text-from-llms-using-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/how-to-stream-text-from-llms-using-jambonz", "permanent": true },
+    { "source": "/using-jambonz-for-retell-custom-telephony", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/using-jambonz-for-retell-custom-telephony", "permanent": true },
+    { "source": "/some-initial-thoughts-on-openais-realtime-api", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/some-initial-thoughts-on-openais-realtime-api", "permanent": true },
+    { "source": "/microsoft-teams-direct-routing-with-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/microsoft-teams-direct-routing-with-jambonz", "permanent": true },
+    { "source": "/using-jambonz-for-telephony-integration-with-retell-ai", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/using-jambonz-for-telephony-integration-with-retell-ai", "permanent": true },
+    { "source": "/text-to-speech-latency-the-jambonz-leaderboard", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/text-to-speech-latency-the-jambonz-leaderboard", "permanent": true },
+    { "source": "/improving-the-voicebot-experience", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/improving-the-voicebot-experience", "permanent": true },
+    { "source": "/priority-queues-in-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/priority-queues-in-jambonz", "permanent": true },
+    { "source": "/how-to-monitor-jambonz-on-aws-using-voipmonitor-and-traffic-mirroring", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/how-to-monitor-jambonz-on-aws-using-voipmonitor-and-traffic-mirroring", "permanent": true },
+    { "source": "/speech-companies-are-failing-at-conversational-ai", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/speech-companies-are-failing-at-conversational-ai", "permanent": true },
+    { "source": "/deploying-jambonz-on-google-cloud", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/deploying-jambonz-on-google-cloud", "permanent": true },
+    { "source": "/tutorial-adding-support-for-a-custom-speech-provider", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/tutorial-adding-support-for-a-custom-speech-provider", "permanent": true },
+    { "source": "/installing-jambonz-using-aws-marketplace", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/installing-jambonz-using-aws-marketplace", "permanent": true },
+    { "source": "/supporting-webrtc-clients-with-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/supporting-webrtc-clients-with-jambonz", "permanent": true },
+    { "source": "/building-your-first-jambonz-app-using-nodejs", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/building-your-first-jambonz-app-using-nodejs", "permanent": true },
+
+    { "source": "/rss.xml", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/rss.xml", "permanent": true },
+    { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/sitemap-index.xml", "permanent": true },
+    { "source": "/(.*)", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog", "permanent": true },
+
     { "source": "/", "destination": "/blog/", "permanent": false }
   ]
 }
