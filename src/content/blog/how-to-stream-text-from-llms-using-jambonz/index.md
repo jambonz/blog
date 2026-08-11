@@ -1,6 +1,6 @@
 ---
 title: "How to stream text from LLMs using jambonz"
-date: 2024-12-21
+date: 2025-01-06
 description: "A deep dive on jambonz LLM and TTS streaming for low-latency Voice AI — the websocket protocol, the say verb, the Node.js SDK, and a full Anthropic example app."
 author: "Dave Horton"
 tags: ["llm", "streaming", "tts", "voice-ai"]

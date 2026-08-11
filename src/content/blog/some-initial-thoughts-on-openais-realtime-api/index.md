@@ -1,6 +1,6 @@
 ---
 title: "Some initial thoughts on OpenAI's Realtime API"
-date: 2024-10-07
+date: 2024-10-14
 description: "I added OpenAI's Realtime API to jambonz, then ran the caller's audio through Deepgram in parallel to compare accuracy and latency — and what that reveals about speech-to-speech vs. traditional ASR pipelines."
 author: "Dave Horton"
 tags: ["openai", "realtime-api", "asr", "deepgram", "voice-ai"]

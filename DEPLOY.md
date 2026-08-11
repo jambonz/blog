@@ -18,13 +18,17 @@ dist/blog/index.html     dist/blog/my-post/index.html     dist/blog/_astro/img.w
 
 Vercel serves `dist/` as the web root, so those files are served at `/blog/...`
 with its standard static handling — correct trailing-slash and directory-index
-behavior, no custom path rewrite to get wrong. `vercel.json` only points Vercel
-at the right output dir and redirects the bare domain root to `/blog/`:
+behavior, no custom path rewrite to get wrong. `vercel.json` points Vercel at the
+right output dir, redirects the bare domain root to `/blog/`, and carries the
+retired-Hashnode-blog redirects (see Step 4 below):
 
 ```jsonc
 {
   "outputDirectory": "dist",
-  "redirects": [{ "source": "/", "destination": "/blog/", "permanent": false }]
+  "redirects": [
+    /* ...blog.jambonz.org 301s, host-scoped... */
+    { "source": "/", "destination": "/blog/", "permanent": false }
+  ]
 }
 ```
 
@@ -88,3 +92,29 @@ posts are ported (keep slugs identical; see MIGRATION.md).
 
 **c. Redirect the old Hashnode blog** — 301 `blog.jambonz.org/<slug>` →
 `jambonz.org/blog/<slug>`. Identical slugs make this a clean 1:1 map.
+
+These rules are **already implemented** in `vercel.json`, gated on
+`has: [{ type: "host", value: "blog.jambonz.org" }]` so they only fire for that
+hostname and are inert until the domain is attached to this Vercel project.
+All 16 Hashnode slugs are enumerated explicitly (every one has a live post here,
+so every old URL 301s to a real 200), plus `/rss.xml`, `/sitemap.xml`, and a
+`/(.*)` catch-all that sends `/archive`, `/series/*`, `/tag/*`, `/@drachtio` and
+anything else to the blog index rather than into a 404.
+
+Cutover, in order — Vercel allows a domain on only one project, so Hashnode has
+to release it first:
+
+1. Confirm all 16 slugs return 200 under `jambonz.org/blog/`.
+2. Hashnode dashboard → Blog Settings → Domain → **remove** the
+   `blog.jambonz.org` custom domain. The blog reverts to its `*.hashnode.dev` URL.
+3. Vercel → this project → Domains → **add** `blog.jambonz.org`. DNS for
+   jambonz.org is already on Vercel nameservers, so the record updates in place.
+4. Verify: `curl -sI https://blog.jambonz.org/priority-queues-in-jambonz` should
+   return `301` with a `location:` of the `/blog/...` URL, and that URL should
+   return 200.
+5. Then **delete or unpublish the Hashnode blog** — otherwise the same 16 posts
+   stay live and indexable at `*.hashnode.dev` and you have simply swapped one
+   duplicate-content competitor for another.
+6. Submit `https://jambonz.org/blog/sitemap-index.xml` in Google Search Console
+   and leave the 301s in place permanently. GSC's Change of Address tool does
+   not apply here — it is domain-level, not subdomain-to-path.
