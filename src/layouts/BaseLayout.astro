@@ -92,7 +92,14 @@ const faqJsonLd = faq?.length
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {/* Same icon set as jambonz.org so the blog matches the main site. These are
+        public/ assets, so the hrefs must go through url() — Astro does not add
+        `base` to hand-written hrefs, and without it they resolve to the root
+        domain and 404. */}
+    <link rel="icon" href={url('favicon/favicon.ico')} sizes="any" />
+    <link rel="icon" type="image/png" sizes="16x16" href={url('favicon/favicon-16x16.png')} />
+    <link rel="icon" type="image/png" sizes="32x32" href={url('favicon/favicon-32x32.png')} />
+    <link rel="apple-touch-icon" href={url('favicon/apple-touch-icon.png')} />
     {description && <meta name="description" content={description} />}
     <link rel="canonical" href={canonicalURL} />
     <link rel="alternate" type="application/rss+xml" title="jambonz blog" href={rssURL} />
