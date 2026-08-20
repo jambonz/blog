@@ -69,21 +69,26 @@ The whole change is a `<client>` element in the `<sip>` section of `/etc/drachti
 
 You cannot reuse the TLS certificate you already have for SIP.
 
-Two reasons, and the second one is recent enough that most people haven't hit it yet. First, a carrier
-requiring mutual TLS wants a certificate issued by an authority *they* trust — if they accepted the
-public authorities, anyone with a Let's Encrypt certificate could authenticate as you. Second, a
-certificate has to carry the `clientAuth` extended key usage to work as a client certificate at all,
-and the public authorities have stopped issuing it. Let's Encrypt issued its last one on **8 July
-2026**, following a Chrome root program requirement that client and server authentication live in
-separate hierarchies.
+Two reasons, and the second is recent enough that most people haven't hit it yet.
 
-So a certificate with only `serverAuth` is rejected outright, no matter how well it is trusted. If you
-try this with your existing certificate, the error you get is `unsupported certificate purpose`, and
-it has nothing to do with your configuration.
+First, a carrier requiring mutual TLS wants a certificate issued by an authority *they* trust. If they
+accepted the public authorities, anyone holding a Let's Encrypt certificate could authenticate as you.
 
-What you need instead is either a small certificate authority of your own that the carrier trusts, or
-a certificate their authority issues from your signing request. We've documented both paths, with the
-openssl commands, in [Mutual TLS to a
+Second, a certificate has to carry the `clientAuth` extended key usage to work as a client certificate
+at all — and the publicly trusted authorities are being taken out of that business entirely. Under
+Chrome root program policy, subordinate CAs disclosed after **15 June 2026** may assert only server
+authentication, and from **15 March 2027** every newly issued public TLS certificate will be
+server-authentication only. Let's Encrypt issued its last client-capable certificate on **8 July
+2026**. The stated migration path across the industry is that client authentication belongs in a
+private or enterprise PKI.
+
+So the instinct to reach for a well-known public CA is the one thing that is actively being removed.
+A certificate with only `serverAuth` is rejected outright, however well it is trusted, and the error
+you get — `unsupported certificate purpose` — looks nothing like the actual cause.
+
+What works is a certificate from an authority the carrier trusts specifically: a small CA of your own
+that they load, a commercial client-authentication or industry PKI they already accept, or their own
+CA signing your request. We've documented all three, with the openssl commands, in [Mutual TLS to a
 carrier](https://docs.jambonz.org/self-hosting/overview/mutual-tls-to-a-carrier).
 
 ## A static IP address
