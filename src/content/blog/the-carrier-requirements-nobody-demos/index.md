@@ -88,7 +88,7 @@ you get — `unsupported certificate purpose` — looks nothing like the actual 
 What works is a certificate from an authority the carrier trusts specifically: a small CA of your own
 that they load, a commercial client-authentication or industry PKI they already accept, or their own
 CA signing your request. We've documented all three, with the openssl commands, in [Mutual
-TLS](https://docs.jambonz.org/guides/features/mutual-tls).
+TLS](https://docs.jambonz.org/self-hosting/overview/mutual-tls).
 
 ## A static IP address
 
