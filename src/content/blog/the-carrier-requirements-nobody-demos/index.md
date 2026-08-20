@@ -4,7 +4,6 @@ date: 2026-08-20
 description: "Mutual TLS and a static IP address are two unglamorous carrier requirements that decide whether a voice AI integration is possible at all. Your platform choice determines whether you can meet them."
 author: "Dave Horton"
 tags: ["tls", "security", "carriers", "self-hosting"]
-draft: true
 ---
 
 Voice AI demos are about latency, interruption handling, and how natural the agent sounds. None of
