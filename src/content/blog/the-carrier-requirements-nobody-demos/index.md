@@ -20,12 +20,7 @@ during the handshake their SBC asks for a certificate, and you have to present o
 
 This is common in regulated work, like collections, healthcare, financial services. In our experience the
 carriers who require it treat it as a fixed property of their platform. They are not going to turn it
-off for one tenant, however well you ask.
-
-What makes it unforgiving is *where* it fails. The TLS handshake collapses before a single SIP message
-is exchanged. There is no 4xx to inspect, no retry, no fallback path, nothing to log at the SIP layer.
-Either your platform can present a client certificate on an outbound connection, or that trunk is
-simply unavailable to you.
+off for one tenant, however nicely you ask.
 
 ## Configuring Mutual TLS in jambonz 11.1.2
 
@@ -33,7 +28,9 @@ jambonz supports mutual TLS as of **11.1.2.** You configure one identity per ser
 carrier asks for one, and nothing is sent to carriers that don't ask, so it is harmless for the rest
 of your trunks. There is nothing to enable per carrier.
 
-The whole change is a `<client>` element in the `<sip>` section of `/etc/drachtio.conf.xml`:
+For full details on configuring mtls, check out [this article on our docs page](https://docs.jambonz.org/self-hosting/overview/mutual-tls)
+
+The main configuration change is the addition of a `<client>` element in the `<sip>` section of `/etc/drachtio.conf.xml`:
 
 ```
 <sip>
@@ -111,34 +108,26 @@ There is a related problem in the other direction. If the platform's SIP hostnam
 address with a short TTL, there is nothing stable to put in a carrier's routing table, and some
 carriers configure inbound routing by address rather than by name.
 
-A [self-hosted jambonz](https://docs.jambonz.org/self-hosting/overview) runs on your own instance with your own address. One IP, yours alone, stable
+A [self-hosted jambonz](https://docs.jambonz.org/self-hosting/overview) runs on your own instance with your own address. One IP (or a couple, for redundancy), yours alone, stable
 across restarts, that you can put in an email and that will still be true next quarter. It is a boring
 answer to a boring question, and it closes the conversation.
 
 ## The SBC Workaround and What It Costs
 
-Neither of these is a secret. If you go looking, you will find customers of the managed platforms
-being told the same thing by support: put a SIP proxy or session border controller of your own in
-between, and let it deal with the carrier.
+Neither of these is a secret. If you go looking, you will find customers of other self-hosted platforms
+being told the same thing by support: put a Kamailio or session border controller in front of their platform, manage that in addition to the rest of the voice infrastructure you're dealing with, mand let it "fix up" the carrier integration.
 
-That advice is correct. It is also an admission. The suggestion is that you operate the exact
-component you were paying the platform to operate for you, and it does not remove the requirement,
-it relocates it to infrastructure you now own.
-
-And it is not free. A back-to-back user agent sits in the signalling path, and usually the media path
+That's not a solution.  That's punting the cost and complexity of solving the problem directly into your lap.  And it's not free. A back-to-back user agent sits in the signalling path, and usually the media path
 too, for the entire duration of every call. That is something else to scale, to make highly available,
 to monitor, and to pay for per minute. It lengthens the media path for every call, including the ones
-that never needed it. You have taken on the operational burden of self-hosting while still paying for
-a managed service.
-
-If you own the SIP stack, both of these requirements are configuration rather than architecture.
+that never needed it. 
 
 ## Questions to Ask Before You Choose a Voice AI Platform
 
 If you are evaluating platforms for production [telephony](https://jambonz.org/blog/using-jambonz-for-retell-custom-telephony), these are cheap questions to ask up front
 and expensive ones to discover during integration:
 
-- Can it present a client certificate on outbound TLS, and can I choose the certificate?
+- Does it support mTLS for SIP?
 - Can I give the carrier a single, stable IP address that I control?
 
 We built [jambonz](https://jambonz.cloud/register) so that the answer to both is yes.
