@@ -6,7 +6,7 @@ author: "Dave Horton"
 tags: ["tls", "security", "carriers", "self-hosting"]
 ---
 
-Voice AI demos are about [latency](https://jambonz.org/blog/text-to-speech-latency-the-jambonz-leaderboard), interruption handling, and how natural the [agent] sounds(https://docs.jambonz.org/verbs/verbs/agent). None of
+Voice AI demos are about [latency](https://jambonz.org/blog/text-to-speech-latency-the-jambonz-leaderboard), interruption handling, and how natural the [agent](https://docs.jambonz.org/verbs/verbs/agent) sounds. None of
 that is what stops a project. What stops a project is a carrier saying "we don't accept traffic
 configured that way", three weeks before go-live.
 
