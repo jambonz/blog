@@ -95,22 +95,28 @@ TLS](https://docs.jambonz.org/self-hosting/overview/mutual-tls).
 The second requirement is even less glamorous: many carriers allowlist by source address. They want
 to be told the IP your SIP traffic will come from, and they want it to stay that way.
 
-This is where managed platforms struggle, and it is worth being precise about why. Running on shared
-infrastructure, the best they can usually offer is a published range of egress addresses. Sometimes a
-large one — a /21 and a /19 together are around ten thousand addresses.
+The thing to understand is that you are not negotiating. Carrier requirements vary enormously by
+country and by operator, they are set by the carrier's provisioning process rather than by what is
+technically reasonable, and if you are a small customer you will not be getting an exception. Some
+want a single static IP. Some want the trunk to register. Some want mutual TLS. Plenty want more than
+one of those.
 
-A carrier that asks for your IP will not always accept that. And when they do, look at what has
-actually been agreed: an allowlist covering every address the platform might egress from is an
-allowlist that admits every other tenant on that platform. It satisfies the paperwork without
-providing the isolation the carrier asked for.
+Managed platforms running on shared infrastructure generally cannot offer a single address. What they
+can offer is a published range of egress addresses, and the carrier either accepts that or does not.
+Many do not — particularly regional operators, whose provisioning form has a field for one IP address
+and no process for anything else.
 
-There is a related problem in the other direction. If the platform's SIP hostname resolves to an
-address with a short TTL, there is nothing stable to put in a carrier's routing table, and some
-carriers configure inbound routing by address rather than by name.
+There is a matching problem inbound. If the platform's SIP hostname resolves to an address with a
+short TTL, there is nothing stable to hand a carrier who configures inbound routing by address rather
+than by name.
 
-A self-hosted jambonz runs on your own instance with your own address. One IP, yours alone, stable
-across restarts, that you can put in an email and that will still be true next quarter. It is a boring
-answer to a boring question, and it closes the conversation.
+A self-hosted jambonz runs on your own instance with your own address. One IP, stable across restarts,
+that you can put on the carrier's form and that will still be true next quarter. It is a boring answer
+to a boring question, and it closes the conversation.
+
+That is really the point. The question is not whether a platform's approach to addressing is
+defensible in the abstract. It is whether it satisfies the carrier sitting in front of you — because
+when it does not, that carrier is not a harder integration, it is simply off the table.
 
 ## The workaround, and what it costs
 
