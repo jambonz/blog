@@ -124,9 +124,13 @@ Neither of these is a secret. If you go looking, you will find customers of the 
 being told the same thing by support: put a SIP proxy or session border controller of your own in
 between, and let it deal with the carrier.
 
-That advice is correct. It is also an admission. The suggestion is that you operate the exact
-component you were paying the platform to operate for you — and it does not remove the requirement,
-it relocates it to infrastructure you now own.
+That advice is correct. It is also an admission.
+
+**If your voice AI platform's answer to a carrier requirement is "go and get an SBC", it is not a
+complete platform.** It is a media server with a SIP interface, and the telephony problem has been
+handed back to you. You are being asked to operate the exact component you were paying the platform
+to operate on your behalf — and it does not remove the requirement, it relocates it to infrastructure
+you now own.
 
 And it is not free. A back-to-back user agent sits in the signalling path, and usually the media path
 too, for the entire duration of every call. That is something else to scale, to make highly available,
