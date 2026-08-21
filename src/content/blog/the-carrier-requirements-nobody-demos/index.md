@@ -96,26 +96,18 @@ TLS](https://docs.jambonz.org/self-hosting/overview/mutual-tls).
 The second requirement is even less glamorous: many carriers allowlist by source address. They want
 to be told the IP your SIP traffic will come from, and they want it to stay that way.
 
-This is where managed platforms struggle. Running on shared
+This is where some managed platforms struggle. Running on shared
 infrastructure, the best they can usually offer is a published range of egress addresses. Sometimes a
 large one. A /21 and a /19 together are around ten thousand addresses.
 
-A carrier that asks for your IP will not always accept that. And when they do, look at what has been agreed upon: an allowlist covering every address the platform might egress from is an
-allowlist that admits every other tenant on that platform. It satisfies the paperwork without
-providing the isolation the carrier asked for.
-
-There is a related problem in the other direction. If the platform's SIP hostname resolves to an
-address with a short TTL, there is nothing stable to put in a carrier's routing table, and some
-carriers configure inbound routing by address rather than by name.
-
-A [self-hosted jambonz](https://docs.jambonz.org/self-hosting/overview) runs on your own instance with your own address. One IP (or a couple, for redundancy), yours alone, stable
+A carrier that asks for your IP will not always accept that. A [self-hosted jambonz](https://docs.jambonz.org/self-hosting/overview) runs on your own instance with your own address. One IP (or a couple, for redundancy), yours alone, stable
 across restarts, that you can put in an email and that will still be true next quarter. It is a boring
 answer to a boring question, and it closes the conversation.
 
 ## The SBC Workaround and What It Costs
 
 Neither of these is a secret. If you go looking, you will find customers of other self-hosted platforms
-being told the same thing by support: put a Kamailio or session border controller in front of their platform, manage that in addition to the rest of the voice infrastructure you're dealing with, mand let it "fix up" the carrier integration.
+being told the same thing by support: put a Kamailio or session border controller in front of their platform, manage that in addition to the rest of the voice infrastructure you're dealing with, and let it "fix up" the carrier integration that way.
 
 That's not a solution.  That's punting the cost and complexity of solving the problem directly into your lap.  And it's not free. A back-to-back user agent sits in the signalling path, and usually the media path
 too, for the entire duration of every call. That is something else to scale, to make highly available,
