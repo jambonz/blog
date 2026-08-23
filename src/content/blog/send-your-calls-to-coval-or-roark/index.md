@@ -125,6 +125,7 @@ something you can express today.
 ## Resources
 
 - [Call recording in jambonz](https://docs.jambonz.org/guides/features/call-recording)
+- [What's new in jambonz v11](https://jambonz.org/blog/jambonz-v11-release)
 - [Coval documentation](https://docs.coval.ai)
 - [Roark](https://roark.ai)
 
