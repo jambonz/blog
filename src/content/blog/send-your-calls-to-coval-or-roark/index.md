@@ -49,8 +49,7 @@ model that were in play, the turn-detection setting, the termination reason, the
 per-stage latencies, barge-in and error counts, and any primitive values from the
 `tag` you set when creating the call. That's what lets you write conditional metric
 rules on the Coval side — score only the calls that used a particular model, say, or
-only the ones that ended badly. The equivalent for Roark is on our list rather than
-in this release.
+only the ones that ended badly.
 
 Two things worth knowing about the delivery itself. It happens on the recording
 server, after the upload finishes, so a slow or unreachable vendor endpoint can
