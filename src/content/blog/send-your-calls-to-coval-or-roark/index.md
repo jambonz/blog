@@ -130,8 +130,6 @@ is clearly more that jambonz and these platforms could do together, and we would
 rather build what you actually want than guess. A few of the directions we have
 already thought about:
 
-- Richer metadata on the Roark path, so vendor-side rules have as much to work with
-  as they do on Coval.
 - Per-application control over what gets evaluated, so you can record everything for
   compliance and evaluate only the applications you care about.
 - Support for Azure Blob storage, so the storage backend stops deciding whether you
