@@ -122,6 +122,26 @@ those calls produce no recording and no eval. The tradeoff to be aware of is tha
 this excludes them from recording too; "record it but don't evaluate it" isn't
 something you can express today.
 
+## Tell Us What You Want Next
+
+What ships in 11.1.4 is deliberately the simple version: recorded calls go to the
+evaluation platform of your choice, and everything else happens over there. But there
+is clearly more that jambonz and these platforms could do together, and we would
+rather build what you actually want than guess. A few of the directions we have
+already thought about:
+
+- Richer metadata on the Roark path, so vendor-side rules have as much to work with
+  as they do on Coval.
+- Per-application control over what gets evaluated, so you can record everything for
+  compliance and evaluate only the applications you care about.
+- Support for Azure Blob storage, so the storage backend stops deciding whether you
+  can use this at all.
+- Evaluation results coming back the other way, so a score lives next to the call in
+  jambonz rather than only in the vendor's dashboard.
+
+If one of those is the thing you need, say so and it moves up the list. If the thing
+you need isn't on it at all, we especially want to hear that.
+
 ## Resources
 
 - [Call recording in jambonz](https://docs.jambonz.org/guides/features/call-recording)
@@ -129,5 +149,5 @@ something you can express today.
 - [Coval documentation](https://docs.coval.ai)
 - [Roark](https://roark.ai)
 
-Available now in jambonz 11.1.4. As always, come tell us how it goes in the
-[jambonz community](https://community.jambonz.org/).
+Available now in jambonz 11.1.4. As always, come tell us how it goes — and what you
+want next — in the [jambonz community](https://community.jambonz.org/).
