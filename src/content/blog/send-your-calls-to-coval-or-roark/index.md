@@ -53,9 +53,9 @@ only the ones that ended badly.
 
 Two things worth knowing about the delivery itself. It happens on the recording
 server, after the upload finishes, so a slow or unreachable vendor endpoint can
-never delay or affect a live call. And if a delivery does fail — bad key, vendor
-outage — you get an entry in the portal's **Alerts** view with the HTTP status and
-response, rather than silence, and calls on jambonz are not affected.
+never delay a live call. And if a delivery does fail — bad key, vendor outage — you
+get an entry in the portal's **Alerts** view with the HTTP status and response,
+rather than silence, and calls on jambonz are not affected.
 
 ## What You See on the Vendor Side
 
