@@ -14,8 +14,8 @@ LLM-judge metrics, whatever you have defined.
 
 As of **jambonz 11.1.4**, sending those calls is a checkbox-level task. jambonz
 already records your calls and captures the turn-by-turn detail of each session
-through [session observability](https://jambonz.org/blog/jambonz-v11-release). Now
-you can point that same data at one of these two platforms: choose the vendor,
+through session observability. Now you can point that same data at one of these two
+platforms: choose the vendor,
 paste in your API key, and set the percentage of calls you want forwarded. No
 application code changes, no bridge process to run, no webhooks to receive.
 
