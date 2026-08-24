@@ -6,7 +6,7 @@ author: "Dave Horton"
 tags: ["voice-ai", "observability", "evals", "coval", "roark"]
 ---
 
-If you build voice agents, you already know that shipping one is the easy part.
+If you [build voice agents](https://jambonz.org/), you already know that shipping one is the easy part.
 Knowing whether it is doing a good job, call after call, is the hard part. That is
 the problem [Coval](https://coval.ai) and [Roark](https://roark.ai) solve: you send
 them your real calls, and they score them — transcripts, sentiment, custom
@@ -17,11 +17,11 @@ already records your calls and captures the turn-by-turn detail of each session
 through session observability. Now you can point that same data at one of these two
 platforms: choose the vendor,
 paste in your API key, and set the percentage of calls you want forwarded. No
-application code changes, no bridge process to run, no webhooks to receive.
+application code changes, bridge process to run, or webhooks to receive.
 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/RaxBf4nxGsg" title="Sending jambonz calls to Coval or Roark for evaluation" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-## How to Turn It On
+## How to Send jambonz Calls to Coval or Roark
 
 Everything lives in one place in the portal: **Account Settings**, in the
 Observability section.
@@ -57,7 +57,7 @@ never delay a live call. And if a delivery does fail — bad key, vendor outage 
 get an entry in the portal's **Alerts** view with the HTTP status and response,
 rather than silence, and calls on jambonz are not affected.
 
-## What You See on the Vendor Side
+## What Coval and Roark Receive from jambonz
 
 Here is what a call looks like once it has landed in Roark — audio ready to play, a
 per-speaker timeline, and Roark's own metrics filled in:
@@ -89,7 +89,7 @@ into those roles on the way out. Calls that jambonz sends land under Coval's *Li
 Monitoring* source, which is what keeps them separate from the simulated calls you
 run there.
 
-## The One Prerequisite
+## What You Need Before Enabling Call Evaluation
 
 This is the piece that trips people up, so read this part twice.
 
@@ -112,7 +112,7 @@ One last note on retention: once a call is delivered, the vendor keeps its own c
 under their retention policy. Deleting the recording from your bucket does not
 delete it from Coval or Roark.
 
-## Evaluating Only Some of Your Applications
+## Can I Evaluate Only Some Applications?
 
 There is no separate control for this, and you don't need one. The eval credential is
 set at the account level, and the recording server only ever sees calls that were
@@ -122,7 +122,7 @@ those calls produce no recording and no eval. The tradeoff to be aware of is tha
 this excludes them from recording too; "record it but don't evaluate it" isn't
 something you can express today.
 
-## Tell Us What You Want Next
+## What's Coming Next for jambonz Evaluations?
 
 What ships in 11.1.4 is deliberately the simple version: recorded calls go to the
 evaluation platform of your choice, and everything else happens over there. But there
