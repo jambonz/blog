@@ -7,13 +7,23 @@ tags: ["gradium", "tts", "latency", "streaming"]
 
 ---
 
-![Gradium recording widget screenshot](./Gradium-Widget.png)
-
 We recently added Gradium as a TTS vendor on jambonz and I spent an afternoon
 testing it. Gradium advertises "highly expressive streaming, precise
 word-level timestamps, custom pronunciation dictionaries, and enterprise-grade
 scalable concurrency." I wanted to see how the streaming and latency claims
 hold up on a real call.
+
+## Demo recordings
+
+<video controls playsinline preload="metadata" style="max-width: 100%; border-radius: 8px;">
+  <source src="./gradium-demo-1.mov" type="video/quicktime" />
+  Your browser does not support the video tag.
+</video>
+
+<video controls playsinline preload="metadata" style="max-width: 100%; border-radius: 8px; margin-top: 1rem;">
+  <source src="./gradium-demo-2.mov" type="video/quicktime" />
+  Your browser does not support the video tag.
+</video>
 
 ## The setup
 
@@ -61,18 +71,5 @@ non-streaming `say` path is slower but still fine for IVR and notifications,
 especially when combined with jambonz's TTS caching.
 
 If you'd like to try this yourself on jambonz.cloud, add a small echo or
-agent app and point it at Gradium. Below are sample assets you can drop into
-this post's folder:
-
-- `Gradium-Widget.png` — screenshot or short video of the recording widget
-- `sample-echo.mp3` — recording from the echo app
-- `sample-agent.mp3` — recording from the agent session
-
-Embedding the jambonz.cloud recording widget here is useful for readers who
-want to reproduce the test — if you'd like, I can capture a short video of
-the widget and include it in this folder.
-
----
-
-If you want me to add recordings, drop the `.mp3` and image/video files into
-this folder and I'll commit them to the PR.
+agent app and point it at Gradium. The recordings above are from the same
+workflow described in this post and show the streaming behavior in context.
