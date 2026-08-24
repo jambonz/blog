@@ -38,7 +38,7 @@ Observability section.
 ![The Observability panel in Account Settings, showing the observability level, storage bucket configuration, and below them the call evaluation vendor, API key and percentage-of-calls slider](./eval-settings.png)
 
 That's it. From then on, when a call ends and its recording has been safely stored,
-jambonz hands the vendor a link to the audio along with the details of the call — who
+jambonz hands the vendor a link to the audio along with the details of the call: who
 called whom, the direction, how it ended, and the jambonz call and account ids. If
 your observability level is **Full**, the turn-by-turn transcript goes with it. At
 **Recording only**, the audio goes on its own and the vendor transcribes it
@@ -59,7 +59,7 @@ rather than silence, and calls on jambonz are not affected.
 
 ## What Coval and Roark Receive from jambonz
 
-Here is what a call looks like once it has landed in Roark — audio ready to play, a
+Here is what a call looks like once it has landed in Roark. Audio is ready to play, a
 per-speaker timeline, and Roark's own metrics filled in:
 
 ![A call in the Roark dashboard: audio playback with per-speaker timeline, the Longest Pause, Agent Responsive and Call Duration metrics, and a properties list including jambonz_call_sid](./roark.png)
@@ -84,7 +84,7 @@ metrics computed alongside:
 This is the **Full** observability level doing its work. The transcript came from
 jambonz rather than from Coval transcribing the audio, which is why each turn carries
 the start and end times it actually had on the call, and why the caller's turns are
-labelled `User` and the agent's `My Agent` — jambonz maps its own per-turn records
+labelled `User` and the agent's `My Agent`. jambonz maps its own per-turn records
 into those roles on the way out. Calls that jambonz sends land under Coval's *Live
 Monitoring* source, which is what keeps them separate from the simulated calls you
 run there.
