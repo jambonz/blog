@@ -1,7 +1,7 @@
 ---
 title: "jambonz Adds Speech-to-Speech Support for Azure Voice Live"
 date: 2026-09-21
-description: "Connect phone calls to Microsoft's Voice Live API with one verb — native speech-to-speech or a cascaded text model, with Azure semantic VAD and 600+ voices."
+description: "Connect phone calls to Microsoft's Voice Live API with one verb, in native speech-to-speech or cascaded text mode."
 tags: ["voice-ai", "azure", "s2s", "speech-to-speech", "microsoft", "llm"]
 draft: true
 faq:
@@ -16,7 +16,7 @@ faq:
   - question: "How do I authenticate to Voice Live from jambonz?"
     answer: "Put your resource key in the verb's auth.apiKey and jambonz sends it as the api-key query parameter. Alternatively, mint a Microsoft Entra ID token for the https://ai.azure.com/.default scope and pass it as auth.accessToken; jambonz sends that as an Authorization Bearer header. Entra tokens are short-lived, so mint one per call."
   - question: "Does jambonz support the Voice Live avatar?"
-    answer: "No. Voice Live's text to speech avatar requires a separate WebRTC SDP exchange with the service to carry video, which has no place in a SIP phone call. Everything else — voices, semantic VAD, noise suppression, word timestamps and viseme events — works."
+    answer: "No. Voice Live's text to speech avatar requires a separate WebRTC SDP exchange with the service to carry video, which has no place in a SIP phone call. Everything else (voices, semantic VAD, noise suppression, word timestamps and viseme events) works."
 ---
 
 We're happy to announce that [jambonz](https://jambonz.org/) now supports Microsoft's
@@ -25,7 +25,7 @@ as a first-class speech-to-speech vendor. If you run [jambonz v11](https://jambo
 or later with the mediajam media engine, you can connect any phone call to a Voice Live
 agent with a single verb.
 
-## Why Voice Live Is Different
+## How Azure Voice Live Compares to Other Speech-to-Speech Vendors
 
 Most speech-to-speech vendors give you one architecture. Voice Live gives you two, and
 the model name is the switch.
@@ -34,7 +34,7 @@ Name a **native** model such as `gpt-realtime-2.1` and you get what you'd expect
 realtime API: the model hears audio and answers in its own voice.
 
 Name a **text** model such as `gpt-4.1`, `gpt-4o` or `gpt-5` and the same endpoint runs
-**cascaded** — Azure speech to text transcribes the caller, the text model answers, and
+**cascaded**. Azure speech to text transcribes the caller, the text model answers, and
 an Azure voice speaks the reply. Microsoft manages the wiring; you still get one
 WebSocket and one verb. That is genuinely useful when you want a specific text model's
 reasoning, or a specific brand voice, without building and operating the pipeline
@@ -43,14 +43,14 @@ yourself.
 On top of either mode, Voice Live layers Azure capabilities that don't exist on the
 OpenAI Realtime API it otherwise resembles:
 
-- **Semantic turn detection.** `azure_semantic_vad` decides the caller has finished
+- **Semantic turn detection:** `azure_semantic_vad` decides the caller has finished
   from *meaning*, not just from silence, and works with every model rather than only
   the realtime ones. Its `remove_filler_words` option means an "umm" no longer counts
   as a barge-in.
-- **Server-side audio cleanup.** `azure_deep_noise_suppression` and echo cancellation
+- **Server-side audio cleanup:** `azure_deep_noise_suppression` and echo cancellation
   run in the service, which also makes interruption and end-of-turn detection more
   accurate.
-- **The full Azure voice catalog** — 600+ standard voices across 150+ locales, plus HD
+- **The full Azure voice catalog:** 600+ standard voices across 150+ locales, plus HD
   voices and custom voices, selectable per call.
 - **Word timestamps and visemes**, if you're driving anything visual downstream.
 
@@ -111,7 +111,7 @@ of the configuration, including the voice, stays exactly as it is.
 These are the things that cost us time, in the order you're likely to hit them.
 
 **Your Azure resource has to be the right kind.** Voice Live needs a **Microsoft
-Foundry** resource — `kind=AIServices` — whose endpoint is its own hostname,
+Foundry** resource (`kind=AIServices`) whose endpoint is its own hostname,
 `https://your-resource.services.ai.azure.com/`. Strip the scheme and the trailing slash
 and that is your `connectOptions.host`.
 
@@ -135,7 +135,7 @@ Voice Live is fully managed, so there is no model to deploy afterwards.
 and `modalities` at the top level of the session object. OpenAI's GA Realtime format
 moved those under `audio.input` / `audio.output`. If you port a `session_update` across
 from `openai_s2s` unchanged, Azure won't understand it. Note too that `voice` is an
-*object* — `{name, type}` — not a voice-id string.
+*object* (`{name, type}`) not a voice-id string.
 
 **Ask for caller transcripts explicitly on native models.** Azure speech to text is
 automatic only for non-multimodal models. With `gpt-realtime-2.1` you get no
@@ -156,8 +156,8 @@ quick way to check what you actually have.
   with both modes documented.
 - The [llm verb reference](https://docs.jambonz.org/verbs/verbs/llm) covers the Azure Voice Live
   section in detail, including voices, transcription models and the Voice Live-only events.
-- Everything in this post — tool calling, the built-in hangup tool, and the event
-  stream — is covered by end-to-end tests that place real phone calls in both native
+- Everything in this post (tool calling, the built-in hangup tool, and the event
+  stream) is covered by end-to-end tests that place real phone calls in both native
   and cascaded mode.
 
 As always, come find us in the [jambonz community](https://community.jambonz.org/) with
