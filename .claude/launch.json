@@ -6,6 +6,17 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 4321
+    },
+    {
+      "name": "jambonz-webapp-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "/Users/dhorton/beachdog-enterprises/beachdog-networks/git/jambones.org/git/commercial/webapp"
+      ],
+      "port": 3001
     }
   ]
 }
