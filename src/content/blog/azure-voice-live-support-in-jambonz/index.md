@@ -3,7 +3,6 @@ title: "jambonz Adds Speech-to-Speech Support for Azure Voice Live"
 date: 2026-09-21
 description: "Connect phone calls to Microsoft's Voice Live API with one verb, in native speech-to-speech or cascaded text mode."
 tags: ["voice-ai", "azure", "s2s", "speech-to-speech", "microsoft", "llm"]
-draft: true
 faq:
   - question: "What is the Azure Voice Live API?"
     answer: "Voice Live is Microsoft's managed speech-to-speech service for voice agents. It exposes a single WebSocket that bundles speech recognition, a generative model, and text to speech, so you don't orchestrate those pieces yourself. It uses the Azure OpenAI Realtime event vocabulary but adds Azure-only capabilities such as semantic turn detection, server-side noise suppression and echo cancellation, and the full Azure TTS voice catalog."
