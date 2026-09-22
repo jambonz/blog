@@ -1,30 +1,28 @@
 ---
-title: "Hearing past the noise: noise isolation for outbound AMD"
+title: "How Noise Isolation Improves Answering Machine Detection"
 description: "Why answering-machine detection struggles on noisy outbound calls, and how jambonz noise isolation gives your speech recognizer a clean signal to work with."
 tags: [jambonz, AMD, answering-machine-detection, noise-isolation, outbound, STT]
 date: 2026-09-21
 
 ---
 
-# Hearing past the noise: noise isolation for outbound AMD
-
 If you place outbound calls with jambonz and rely on **answering machine detection (AMD)** to tell a live human apart from a voicemail greeting, there's a small configuration change that can make a big difference to your accuracy: **noise isolation**.
 
-It's a one-line addition to the API request that creates the call — right next to where you enable AMD — and on outbound campaigns it can be the difference between AMD making the right call and AMD guessing.
+It's a one-line addition to the API request that creates the call (right next to where you enable AMD) and on outbound campaigns it can be the difference between AMD making the right call and AMD guessing.
 
-## AMD is really a speech problem
+## How jambonz Answering Machine Detection Works
 
-It helps to understand what AMD is actually doing under the hood. jambonz doesn't detect voicemail by magic — it **listens to the greeting and runs it through your speech-to-text (STT) recognizer**, then applies heuristics to the result:
+It helps to understand what AMD is actually doing under the hood. jambonz doesn't detect voicemail by magic. It **listens to the greeting and runs it through your speech-to-text (STT) recognizer**, then applies heuristics to the result:
 
-- How many words were spoken in the greeting? A long, uninterrupted greeting looks like a machine; a short "Hello?" looks like a human. (This is the `thresholdWordCount` setting — it defaults to 9 words.)
+- How many words were spoken in the greeting? A long, uninterrupted greeting looks like a machine; a short "Hello?" looks like a human. (This is the `thresholdWordCount` setting. It defaults to 9 words.)
 - Was a beep or tone detected?
 - Did anyone speak at all before the timers expired?
 
-In other words, AMD is only ever as good as the transcription it's fed. If the recognizer mishears the greeting — or hears nothing usable — AMD's decision degrades with it. You start seeing `amd_no_speech_detected`, `amd_decision_timeout`, or, worse, confident-but-wrong results where a human gets flagged as a machine or vice versa.
+In other words, AMD is only ever as good as the transcription it's fed. If the recognizer mishears the greeting, or hears nothing usable, AMD's decision degrades with it. You start seeing `amd_no_speech_detected`, `amd_decision_timeout`, or, worse, confident-but-wrong results where a human gets flagged as a machine or vice versa.
 
-## The problem with outbound calls: you don't control the room
+## Why AMD Accuracy Drops on Outbound Calls
 
-On an **inbound** call, the person calling you has usually chosen a moment where they can talk. On an **outbound** call, you're interrupting someone wherever they happen to be — and you have no idea what that environment sounds like.
+On an **inbound** call, the person calling you has usually chosen a moment where they can talk. On an **outbound** call, you're interrupting someone wherever they happen to be, and you have no idea what that environment sounds like.
 
 They might be:
 
@@ -33,19 +31,19 @@ They might be:
 - in a café or an open-plan office;
 - on a cheap speakerphone in a big, echoey room.
 
-All of that background noise lands in the same audio stream as their "Hello?" — and it's exactly the kind of interference that trips up a speech recognizer. The greeting the recognizer *should* hear as three clean words arrives smeared with engine noise and cross-talk, so the transcript comes back garbled, padded with noise-induced tokens, or empty. AMD then has bad input to reason about, and your automation downstream — whether to drop a message, connect an agent, or hang up — inherits the mistake.
+All of that background noise lands in the same audio stream as their "Hello?" and it's exactly the kind of interference that trips up a speech recognizer. The greeting the recognizer *should* hear as three clean words arrives smeared with engine noise and cross-talk, so the transcript comes back garbled, padded with noise-induced tokens, or empty. AMD then has bad input to reason about, and your automation downstream (whether to drop a message, connect an agent, or hang up) inherits the mistake.
 
 This is where noise isolation earns its place.
 
-## What noise isolation does
+## What Noise Isolation Does to the Audio Stream
 
-Noise isolation runs the call audio through a noise-suppression model that strips out background noise while preserving speech. Enable it and the recognizer powering AMD gets a **clean voice signal** instead of a voice-plus-traffic signal — so the greeting transcribes accurately, the word count is meaningful, and AMD reaches the right decision faster.
+Noise isolation runs the call audio through a noise-suppression model that strips out background noise while preserving speech. Enable it and the recognizer powering AMD gets a **clean voice signal** instead of a voice-plus-traffic signal, so the greeting transcribes accurately, the word count is meaningful, and AMD reaches the right decision faster.
 
-Crucially for outbound work: by default, noise isolation cleans the **inbound** audio — the audio arriving at jambonz *from the far end*, i.e. the person you dialled. That's precisely the audio AMD is analysing. You're cleaning up the noisy environment you can't control, before it ever reaches the recognizer.
+Crucially for outbound work: by default, noise isolation cleans the **inbound** audio, the audio arriving at jambonz *from the far end*, i.e. the person you dialled. That's precisely the audio AMD is analysing. You're cleaning up the noisy environment you can't control, before it ever reaches the recognizer.
 
-## Turning it on
+## How to Enable Noise Isolation With AMD
 
-The most common way to run AMD on outbound calls is to enable it right in the **createCall API request** — the same call that kicks off the outbound dial. As of the latest jambonz release, `noiseIsolation` can be set there too, sitting alongside your `amd` configuration. So you enable both in one place, at the moment you launch the call.
+The most common way to run AMD on outbound calls is to enable it right in the **createCall API request,** the same call that kicks off the outbound dial. As of the latest jambonz release, `noiseIsolation` can be set there too, sitting alongside your `amd` configuration. So you enable both in one place, at the moment you launch the call.
 
 Using the jambonz SDK's REST client:
 
@@ -125,9 +123,9 @@ session.on('/amd', (evt) => {
 });
 ```
 
-### Prefer to set it in-call? Use `config`
+### How to Set Noise Isolation on the config Verb
 
-If you're not creating the call via the API — for example the outbound leg is bridged from an inbound call, or you simply prefer to keep everything in your application logic — you can set exactly the same `noiseIsolation` and `amd` options on the **`config` verb** instead:
+If you're not creating the call via the API (for example the outbound leg is bridged from an inbound call, or you simply prefer to keep everything in your application logic) you can set exactly the same `noiseIsolation` and `amd` options on the **`config` verb** instead:
 
 ```json
 [
@@ -141,11 +139,11 @@ If you're not creating the call via the API — for example the outbound leg is 
 ]
 ```
 
-> **Note:** AMD runs asynchronously. When you attach it to the `config` verb, follow it with a `pause` (or another verb that keeps the call up) so the call doesn't hang up before AMD has had a chance to decide. Setting AMD in the createCall API avoids this bookkeeping — the call stays up on its own while AMD works.
+> **Note:** AMD runs asynchronously. When you attach it to the `config` verb, follow it with a `pause` (or another verb that keeps the call up) so the call doesn't hang up before AMD has had a chance to decide. Setting AMD in the createCall API avoids this bookkeeping. The call stays up on its own while AMD works.
 
-## Switching it off when you're done
+## When to Turn Noise Isolation Off
 
-Noise isolation was there to help AMD reach a decision — once it has, you often don't need it running for the rest of the call. Leaving it on for a live conversation is rarely harmful, but there's no reason to keep spending media-server (or, for Krisp, licensed) processing on audio you're no longer analysing.
+Noise isolation was there to help AMD reach a decision. Once it has, you often don't need it running for the rest of the call. Leaving it on for a live conversation is rarely harmful, but there's no reason to keep spending media-server (or, for Krisp, licensed) processing on audio you're no longer analysing.
 
 Turning it off is symmetrical to turning it on: send a `config` verb with `noiseIsolation.enable` set to `false`. A natural place to do this is right in your AMD hook, the moment you know a human has answered:
 
@@ -172,14 +170,14 @@ Or as a standalone verb array in any actionHook response:
 ]
 ```
 
-Because `config` sets session-level state, this takes effect immediately for the rest of the call — no need to repeat it on subsequent verbs.
+Because `config` sets session-level state, this takes effect immediately for the rest of the call. No need to repeat it on subsequent verbs.
 
-## Choosing a noise-isolation vendor
+## RNNoise or Krisp: Which Vendor to Choose
 
 jambonz currently supports two noise-isolation engines, selected with the `vendor` property:
 
-- **RNNoise** — a lightweight, open-source noise-suppression model. It runs entirely on your jambonz media servers with no external dependencies and no API key, so it's free to use and available out of the box on any jambonz deployment. A great default, and an easy way to try noise isolation before deciding whether you need more.
-- **Krisp** — a best-in-class commercial noise-cancellation engine. Krisp is more aggressive and more capable at stripping out difficult, real-world background noise — road noise, wind, café chatter, the kind of things your outbound recipients are actually surrounded by — while keeping speech clean. Using Krisp requires an API key, which you enable on your jambonz platform.
+- **RNNoise:** a lightweight, open-source noise-suppression model. It runs entirely on your jambonz media servers with no external dependencies and no API key, so it's free to use and available out of the box on any jambonz deployment. A great default, and an easy way to try noise isolation before deciding whether you need more.
+- **Krisp:** a best-in-class commercial noise-cancellation engine. Krisp is more aggressive and more capable at stripping out difficult, real-world background noise (road noise, wind, café chatter, the kind of things your outbound recipients are actually surrounded by) while keeping speech clean. Using Krisp requires an API key, which you enable on your jambonz platform.
 
 ```json
 {
@@ -193,24 +191,24 @@ jambonz currently supports two noise-isolation engines, selected with the `vendo
 }
 ```
 
-If you're running on **[jambonz.cloud](https://jambonz.cloud)**, there's good news: **Krisp is included as standard on all accounts** — no separate API key to provision, no extra setup. You can switch it on immediately and get commercial-grade noise cancellation in front of your AMD recognizer.
+If you're running on **[jambonz.cloud](https://jambonz.cloud)**, there's good news: **Krisp is included as standard on all accounts.** There's no separate API key to provision or extra setup. You can switch it on immediately and get commercial-grade noise cancellation in front of your AMD recognizer.
 
 For a self-hosted deployment, RNNoise is the zero-configuration starting point, and you can bring your own Krisp API key when you want to step up the suppression quality.
 
-## Tuning it
+## How to Tune Noise Isolation and AMD Thresholds
 
-Beyond `enable` and `vendor`, `noiseIsolation` also accepts an optional **`level`** — how aggressively to suppress noise. More aggressive suppression removes more background noise but can start to eat into speech, so it's worth testing against real recordings from your campaign.
+Beyond `enable` and `vendor`, `noiseIsolation` also accepts an optional **`level`**, how aggressively to suppress noise. More aggressive suppression removes more background noise but can start to eat into speech, so it's worth testing against real recordings from your campaign.
 
 And on the AMD side, remember you can tune the detection itself to match your traffic:
 
-- **`thresholdWordCount`** — lower it if your greetings are short, raise it if humans in your market tend to answer more verbosely.
-- **`timers`** — `noSpeechTimeoutMs`, `decisionTimeoutMs`, `toneTimeoutMs` and `greetingCompletionTimeoutMs` let you trade a faster decision against a more confident one.
+- **`thresholdWordCount`:** lower it if your greetings are short, raise it if humans in your market tend to answer more verbosely.
+- **`timers`:** `noSpeechTimeoutMs`, `decisionTimeoutMs`, `toneTimeoutMs` and `greetingCompletionTimeoutMs` let you trade a faster decision against a more confident one.
 
 A good rule of thumb: **clean the audio first with noise isolation, then tune AMD's thresholds against the improved transcripts.** Tuning thresholds on top of noisy audio is chasing a moving target.
 
-## Wrapping up
+## Where to Go Next
 
-AMD lives or dies by the quality of the speech it hears, and on outbound calls you're at the mercy of whatever environment your recipient happens to be in. Noise isolation puts a clean-up stage in front of the recognizer so a "Hello?" from a moving car reads as clearly as one from a quiet office — giving AMD the clean signal it needs to get the answer right.
+AMD lives or dies by the quality of the speech it hears, and on outbound calls you're at the mercy of whatever environment your recipient happens to be in. Noise isolation puts a clean-up stage in front of the recognizer so a "Hello?" from a moving car reads as clearly as one from a quiet office, giving AMD the clean signal it needs to get the answer right.
 
 It's one line in your `config` verb. If you're running outbound campaigns with AMD, it's well worth switching on.
 
