@@ -1,11 +1,14 @@
 ---
-title: "Self-Hosted Isn't SOC 2-Ready. jambonz Is."
+title: "Is Your Self-Hosted Voice AI SOC 2 Compliant?"
+subtitle: "How jambonz gives you a Voice AI platform built to pass a SOC 2 audit, running in your own AWS account."
 date: 2026-10-13
-description: "SOC 2 is the price of entry for selling into banking and healthcare. Here's what we learned on our own SOC 2 journey, what we built into jambonz 11.1.6 because of it, and a step-by-step walkthrough of deploying a large jambonz cluster on AWS that's ready for the audit."
+description: "Self-hosted Voice AI keeps call data in your network, but it isn't SOC 2-ready by default. jambonz 11.1.6 is. Here's how to deploy it on AWS."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "aws", "cloudformation", "voice-ai"]
 draft: true
 faq:
+  - question: "Can self-hosted Voice AI be SOC 2 compliant?"
+    answer: "Yes, but not by default. A SOC 2 audit tests controls such as encryption, least-privilege access, secrets handling and log retention, and most self-hosted voice frameworks leave all of that for you to build. jambonz 11.1.6 includes those controls in its AWS deployment, so your own SOC 2 work can focus on your policies and your people."
   - question: "Does deploying jambonz with these templates make my company SOC 2 compliant?"
     answer: "No software can do that on its own. SOC 2 is a report on your organization's controls. The 11.1.6 templates take care of the infrastructure controls an auditor will test on your voice platform, such as encryption, least-privilege access, secrets handling and log retention. Your policies, your people's access and your account-wide logging are still yours to put in place."
   - question: "Where does call data live when I self-host jambonz?"
