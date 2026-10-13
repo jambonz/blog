@@ -56,6 +56,7 @@ Schema (`src/content.config.ts`):
 ```yaml
 ---
 title: "Post Title"          # required
+subtitle: "..."              # optional, shown under the title on the post page
 date: 2024-01-15             # required, coerced to UTC Date, rendered in UTC
 updatedDate: 2024-02-01      # optional
 description: "..."           # optional, used in <meta> + listing
