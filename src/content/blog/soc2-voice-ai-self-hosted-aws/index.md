@@ -1,5 +1,5 @@
 ---
-title: "Deploying a Voice AI platform that passes a SOC 2 audit, with jambonz 11.1.6"
+title: "Self-Hosted Isn't SOC 2-Ready. jambonz Is."
 date: 2026-10-13
 description: "SOC 2 is the price of entry for selling into banking and healthcare. Here's what we learned on our own SOC 2 journey, what we built into jambonz 11.1.6 because of it, and a step-by-step walkthrough of deploying a large jambonz cluster on AWS that's ready for the audit."
 author: "Dave Horton"
