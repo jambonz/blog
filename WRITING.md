@@ -70,6 +70,13 @@ Use lowercase words separated by hyphens for the folder name — no spaces.
    the article. Keep **`draft: true`** while you're still working — that keeps
    the post off the public site but still lets you preview it (see below).
 
+   **Optional — add a subtitle.** Add a `subtitle:` line under `title:` to show
+   a second, smaller line under the headline on the post page:
+
+   ```yaml
+   subtitle: "A sentence that expands on the headline."
+   ```
+
    **Optional — add an FAQ.** If your post answers common questions, add a `faq`
    list to the frontmatter. It renders a "Frequently asked questions" section at
    the end of the post *and* emits structured data that Google and AI assistants

@@ -11,6 +11,8 @@ const blog = defineCollection({
   schema: ({ image }) =>
     z.object({
       title: z.string(),
+      // Shown under the title on the post page only (not in <meta> or the listing).
+      subtitle: z.string().optional(),
       date: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       description: z.string().optional(),
