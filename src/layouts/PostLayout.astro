@@ -7,6 +7,7 @@ import { url } from '../utils/url';
 
 interface Props {
   title: string;
+  subtitle?: string;
   date: Date;
   updatedDate?: Date;
   description?: string;
@@ -26,7 +27,7 @@ interface Props {
   };
 }
 
-const { title, date, updatedDate, description, author, tags = [], coverImage, ogImage, canonicalUrl, faq, whitepaper } =
+const { title, subtitle, date, updatedDate, description, author, tags = [], coverImage, ogImage, canonicalUrl, faq, whitepaper } =
   Astro.props;
 
 // An explicit ogImage wins; otherwise fall back to the cover, then to the
@@ -60,6 +61,7 @@ const fmt = (d: Date) =>
   <article class="post">
     <header>
       <h1>{title}</h1>
+      {subtitle && <p class="subtitle">{subtitle}</p>}
       <p class="meta">
         {author && <span class="author">{author}</span>}
         <time datetime={date.toISOString()}>{fmt(date)}</time>
@@ -109,6 +111,13 @@ const fmt = (d: Date) =>
     line-height: 1.2;
     margin: 0 0 var(--space-sm);
     letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    font-size: 1.25rem;
+    line-height: 1.4;
+    color: var(--color-text-muted);
+    margin: 0 0 var(--space-md);
   }
 
   .meta {
