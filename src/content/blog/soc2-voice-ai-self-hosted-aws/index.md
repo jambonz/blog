@@ -1,7 +1,6 @@
 ---
 title: "How to build a SOC-2 compliant Voice AI platform on AWS"
-subtitle: "How jambonz lets you fend off AI-power cyber threats"
-date: 2026-10-13
+date: 2026-10-15
 description: "Self-hosted Voice AI keeps call data in your network, but it isn't SOC 2-ready by default. jambonz 11.1.6 is. Here's how to deploy it on AWS."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "aws", "cloudformation", "voice-ai"]
@@ -17,9 +16,13 @@ faq:
     answer: "Not at the default log level. Starting with 11.1.6, caller transcripts and DTMF digits are logged only at debug level, and credentials for listen websockets are never written to the logs."
 ---
 
-In this new age of AI-powered cybersecurity threats, hardening your IT infrastructure is more critical than ever, and Voice AI orchestration platforms present specific challenges.  By their nature these systems need to connect to the outside world to perform their function: they need to allow SIP, RTP and HTTP traffic in, and they need to connect out to services such as LLM and speech processing platforms.  Furthermore, they typically house significant stores of private customer data that make them attractive to cyber criminals: such things as phone numbers, personally-identifiable information, private credentials, transcripts, and audio recordings.
+In the unfolding age of AI-powered cybersecurity threats, hardening your IT infrastructure is more important than ever and Voice AI orchestration platforms present specific challenges.  By their nature, these systems are heavily connected to the outside world: 
+- they need to allow SIP, RTP and HTTP traffic in, and 
+- they need to connect out to services such as LLM and speech processing platforms.  
 
-At jambonz our primary focus over the past year has been to harden our cloud systems in order to be ready to achieve SOC-2 attestation, and this blog post describes how to build your own self-hosted jambonz cluster on AWS that is also ready for a SOC-2 audit.
+Furthermore, Voice AI platforms house significant amounts of private customer data that attract cyber criminals: phone numbers, personally-identifiable information, private credentials, transcripts, audio recordings, and more.
+
+At jambonz, we've spent a lot of time, energy, and resources over the past year to harden and protect our cloud systems as part of an effort to achieve SOC-2 attestation.  We've learned a lot, factored that learning into the suite of self-hosted deployment tools that we provide our customers, and this blog post describes how to build your own self-hosted jambonz cluster on AWS that is also ready for a SOC-2 audit.
 
 ## What SOC 2 is, and why it matters
 
@@ -35,25 +38,23 @@ There are two kinds of report. A **Type I** report looks at whether your control
 
 Why has SOC 2 gone from "nice to have" to "no report, no contract"? Because attacks have become routine, and the costliest ones increasingly come through vendors. A bank can harden its own systems and still be exposed through the contact-center software that records its customers' calls. Vendor-risk teams have learned this the hard way. A SOC 2 report is how they decide whether you are a risk they can take on.
 
-Voice AI raises the stakes. A conversational agent doesn't just route calls. It listens, transcribes, sends what it hears to speech and language models, and often looks up the caller's records partway through a call. That is a lot of sensitive data moving through a lot of systems, and it all has to be appropriately secured end-to-end. That is what SOC-2 is designed to report on.
+Voice AI raises the stakes. A conversational agent doesn't just route calls. It listens, transcribes, sends what it hears to speech and language models, and often looks up the caller's records during a call. That is a lot of sensitive data moving through a lot of systems, and it all has to be thoughtfully secured end-to-end. That is what SOC-2 is designed to report on.
 
-## Where your customers' data lives - the case for self-hosting your Voice AI platform
+## Where your customers' data lives
 
-This is the question that should decide which platform you build on.
+For many teams a hosted platform is the right call. It’s the fastest way to get a voice agent into production, and it’s why we run jambonz.cloud.
 
-With a SaaS voice agent platform, your customers' calls, recordings, transcripts and the API keys for your models all live in someone else's network. That vendor may have a SOC 2 report of its own. But their report covers *their* controls; it doesn't bring the data back under yours. If they are breached, you are the one writing to your customers. And when your auditor asks where your call data lives and who can reach it, the honest answer is "a third party we don't control."
+But many organizations need ultimate control over their customer and call data, whether for data sovereignty or for strict privacy and security requirements: banks, health systems, public-sector agencies, and companies bound to keep data in a specific country. For them, self-hosting is the answer. jambonz self-hosted runs in your own AWS account, in the region you choose, inside a VPC you own, behind your security groups, under your IAM policies, and logging to your CloudWatch. Recordings, transcripts and call records never leave the boundary you control and audit. Because it runs in your account, the security tooling you already use covers it too: GuardDuty threat detection, CloudTrail auditing, Security Hub and AWS Config apply to jambonz like any other workload, with no extra integration.
 
-A self-hosted platform changes that answer. jambonz self-hosted runs in your own AWS account, inside a VPC you own, behind your security groups, under your IAM policies, and logging to your CloudWatch. The data never leaves the boundary you already audit. For a bank or a health system, that is often the difference between a short security review and a long one.
-
-Self-hosting by itself isn't enough, though. Developer frameworks such as LiveKit can be self-hosted, but they give you building blocks and leave the hardening to you: secrets handling, IAM roles, database encryption, log retention, network rules. That work is where audits are won or lost. With jambonz version 11.1.6 running on AWS, we now ship that hardening as part of the product.
+Self-hosting by itself isn’t enough, though. Developer frameworks such as LiveKit can be self-hosted, but they give you building blocks and leave the hardening to you: secrets handling, IAM roles, database encryption, log retention, network rules. That work is where audits are won or lost. With jambonz 11.1.6 on AWS, that hardening ships as part of the product.
 
 ## What we learned on our SOC 2 journey
 
 We run jambonz ourselves as a hosted service, jambonz.cloud. Going through SOC 2 readiness on our own infrastructure taught us a lot that we have now factored into our self-hosted deployment scripts.
 
-We were in decent shape to start with because we have always focused on security and privacy: our customers span the globe and often have have chosen to self-host for security and data sovereignity requirements as well as latency.
+We were in decent shape to start with because we have always focused on security and privacy: our customers span the globe and often have have chosen to self-host for security and data residency requirements as well as latency.
 
-For example, while we provide a call recording feature, we've never stored the audio data as part of our platform; we've always streamed call recordings to our customer's own sovereign cloud storage specifically for privacy/security reasons. We've always encrypted private credentials such as access tokens or api keys with the latest crypto techniques - and then stored the encrypted hashes in a database that itself is encrypted. And so on.
+For example, while we provide a call recording feature, we've never stored the audio data as part of our platform; we've always streamed call recordings to our customer's own cloud storage specifically for privacy/security reasons. We've always encrypted private credentials such as access tokens or api keys with the latest crypto techniques - and then stored the encrypted hashes in a database that itself is encrypted. And so on.
 
 Nonetheless, we learned a lot during our SOC-2 preparedness, and we've factored all of this into jambonz release 11.1.6 and then updated our [AWS Cloudformation scripts](https://github.com/jambonz-selfhosting/cloudformation) to make it available to our customers. Here are some of the important changes that our 11.1.6 deployments on AWS now have:
 
