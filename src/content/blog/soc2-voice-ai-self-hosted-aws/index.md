@@ -16,7 +16,7 @@ faq:
     answer: "Not at the default log level. Starting with 11.1.6, caller transcripts and DTMF digits are logged only at debug level, and credentials for listen websockets are never written to the logs."
 ---
 
-In the unfolding age of AI-powered cybersecurity threats, hardening your IT infrastructure is more important than ever and Voice AI orchestration platforms present specific challenges.  By their nature, these systems are heavily connected to the outside world: 
+In the unfolding age of AI-powered cybersecurity threats, hardening your IT infrastructure is more important than ever, and Voice AI orchestration platforms present specific challenges.  By their nature, these systems are heavily connected to the outside world: 
 - they need to allow SIP, RTP and HTTP traffic in, and 
 - they need to connect out to services such as LLM and speech processing platforms.  
 
@@ -42,9 +42,11 @@ Voice AI raises the stakes. A conversational agent doesn't just route calls. It 
 
 ## Where your customers' data lives
 
-For many teams a hosted platform is the right call. It’s the fastest way to get a voice agent into production, and it’s why we run jambonz.cloud.
+For many teams a hosted platform is the right call. It’s the fastest way to get a voice agent into production, and that's why we run jambonz.cloud.
 
-But many organizations need ultimate control over their customer and call data, whether for data sovereignty or for strict privacy and security requirements: banks, health systems, public-sector agencies, and companies bound to keep data in a specific country. For them, self-hosting is the answer. jambonz self-hosted runs in your own AWS account, in the region you choose, inside a VPC you own, behind your security groups, under your IAM policies, and logging to your CloudWatch. Recordings, transcripts and call records never leave the boundary you control and audit. Because it runs in your account, the security tooling you already use covers it too: GuardDuty threat detection, CloudTrail auditing, Security Hub and AWS Config apply to jambonz like any other workload, with no extra integration.
+But many organizations need ultimate control over their customer and call data, whether for data sovereignty or for strict privacy and security requirements: banks, health systems, public-sector agencies, and companies bound to keep data in a specific country. For them, self-hosting is the answer. 
+
+Our jambonz self-hosted runs in your own AWS account, in the region you choose, inside a VPC you own, behind your security groups, under your IAM policies, and logging to your CloudWatch. Recordings, transcripts and call records never leave the boundary you control and audit. Because it runs in your account, the security tooling you already use covers it too: GuardDuty threat detection, CloudTrail auditing, Security Hub and AWS Config apply to jambonz like any other workload, with no extra integration.
 
 Self-hosting by itself isn’t enough, though. Developer frameworks such as LiveKit can be self-hosted, but they give you building blocks and leave the hardening to you: secrets handling, IAM roles, database encryption, log retention, network rules. That work is where audits are won or lost. With jambonz 11.1.6 on AWS, that hardening ships as part of the product.
 
@@ -54,12 +56,12 @@ We run jambonz ourselves as a hosted service, jambonz.cloud. Going through SOC 2
 
 We were in decent shape to start with because we have always focused on security and privacy: our customers span the globe and often have have chosen to self-host for security and data residency requirements as well as latency.
 
-For example, while we provide a call recording feature, we've never stored the audio data as part of our platform; we've always streamed call recordings to our customer's own cloud storage specifically for privacy/security reasons. We've always encrypted private credentials such as access tokens or api keys with the latest crypto techniques - and then stored the encrypted hashes in a database that itself is encrypted. And so on.
+For example, we designed our call recording feature such that we never store the call audio on any of our systems; instead we stream it to the customer's own cloud storage, specifically for privacy reasons. Additionally, we've always encrypted private credentials such as access tokens or api keys with the latest crypto techniques - and then stored the encrypted hashes in a database that itself is encrypted. And so on.
 
-Nonetheless, we learned a lot during our SOC-2 preparedness, and we've factored all of this into jambonz release 11.1.6 and then updated our [AWS Cloudformation scripts](https://github.com/jambonz-selfhosting/cloudformation) to make it available to our customers. Here are some of the important changes that our 11.1.6 deployments on AWS now have:
+Nonetheless, we learned a lot during our SOC-2 preparedness, and we've factored all of this into jambonz release 11.1.6 and then updated our [AWS Cloudformation scripts](https://github.com/jambonz-selfhosting/cloudformation) to make it available to you. Here are some of the important changes that our 11.1.6 deployments on AWS now have:
 
-- **Caller transcripts and DTMF digits are no longer logged at `info` level.** They appear only at `debug`, which a customer can choose to turn on briefly to troubleshoot, not in normal operation. That keeps what callers say, and the digits they key in (account numbers, PINs, dates of birth), out of your everyday logs.
-- **Every secret lives in AWS Systems Manager Parameter Store** as an encrypted SecureString.  No secrets appear in plaintext in any config file or anywhere on disk.
+- **Caller transcripts and DTMF digits are no longer logged at `info` level.** They appear only at `debug`, which a customer can choose to turn on briefly to troubleshoot, not in normal operation. That keeps what callers say, and the digits they key in (account numbers, PINs, dates of birth), out of the systems log files.
+- **Every secret lives in AWS Systems Manager Parameter Store** as an encrypted SecureString.  No secrets appear in plaintext in any config file or anywhere on disk of any of your EC2 instances.
 - **Least-privilege instance roles:** each server tier gets only the IAM permissions its software actually requires.
 - **Fewer ports open to the internet.**. We eliminated the dependency on SNS for Scale-in notifications which allowed us to remove an open port from the security groups.  We also removed ports that were open but unused for SMPP.
 - **The instance metadata service requires IMDSv2** on every server, which blocks a common way of stealing instance credentials.
@@ -72,11 +74,14 @@ Nonetheless, we learned a lot during our SOC-2 preparedness, and we've factored 
 - **Credentials for [listen](https://docs.jambonz.org/verbs/verbs/listen) websockets are never written to the logs**, at any level.
 - **Per-account API rate limits:** limits on call creation, call status reads, sign-in and sign-up, returning `429` when a client exceeds them.
 - **Tighter permissions:** service-provider users can no longer change operator-only settings, carrier changes stay within the user's own organization or account, and calls from a registration trunk's address match only carriers that belong to the right account.
-- **Control over support audio capture:** When VoIPMonitor is used in conjuntion with jambonz for troubleshooting pruposes, accounts and organizations can opt out of having their audio collected in this way.
+- **Control over support audio capture:** When VoIPMonitor is used in conjuntion with jambonz for troubleshooting pruposes, accounts and organizations can opt out of having their audio collected for this purpose by making a selection on the jambonz portal.
+- **PCI-compliant credit card processing:** When using a third-party service like [PCIPal](https://www.pcipal.com/) to collect and process credit card payments, [jambonz can remove iself from the media path](https://docs.jambonz.org/guides/features/managing-media-anchors) during the credit card portion of the transaction.
 
-## Walkthrough: deploying a large cluster on AWS
+## Walkthrough: Deploying a SOC 2-ready cluster on AWS
 
 Here's the whole process, start to finish, for a **jambonz large** deployment on AWS. In a large deployment every role (SIP, media, feature servers, web, monitoring, recording) runs on its own servers, and the SIP, media, feature server, web and recording tiers each scale in their own Auto Scaling group. It's the size we recommend for production in regulated environments.
+
+![jambonz large on AWS: Auto Scaling groups across two Availability Zones, internet-facing and internal load balancers, Aurora, Multi-AZ Redis, and the built-in SOC 2 controls](./jambonz-large-aws-architecture.png)
 
 ### Step 1: Generate the template for your region
 
