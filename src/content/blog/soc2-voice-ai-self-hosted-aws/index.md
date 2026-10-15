@@ -167,8 +167,6 @@ At the bottom of the page, acknowledge that the stack creates IAM resources. The
 
 Then click **Next**, review, and **Submit**. You can follow progress on the stack's **Events** tab.
 
-<!-- EDITOR: add how long the large stack took to create. I didn't have a timing for it. -->
-
 ### Step 9: Outputs and first sign-in
 
 ![The stack outputs, including the portal URL and initial password](./cf-8-outputs.png)
