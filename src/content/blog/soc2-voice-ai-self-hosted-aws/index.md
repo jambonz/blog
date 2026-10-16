@@ -4,7 +4,6 @@ date: 2026-10-15
 description: "Self-hosted Voice AI keeps call data in your network, but it isn't SOC 2-ready by default. jambonz 11.1.6 is. Here's how to deploy it on AWS."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "aws", "cloudformation", "voice-ai"]
-draft: true
 faq:
   - question: "Can self-hosted Voice AI be SOC 2 compliant?"
     answer: "Self-hosted Voice AI can be SOC 2 compliant, but not by default. A SOC 2 audit tests controls such as encryption, least-privilege access, secrets handling and log retention, and most self-hosted voice frameworks leave all of that for you to build. jambonz 11.1.6 includes those controls in its AWS deployment, so your own SOC 2 work can focus on your policies and your people."
@@ -30,7 +29,7 @@ Furthermore, Voice AI platforms house significant amounts of private customer da
 
 At jambonz, we've spent a lot of time, energy, and resources over the past year to harden and protect our cloud systems as part of an effort to achieve SOC-2 attestation.  We've learned a lot, factored that learning into the suite of self-hosted deployment tools that we provide our customers, and this blog post describes how to [build your own self-hosted jambonz cluster on AWS](https://docs.jambonz.org/self-hosting/overview) that is also ready for a SOC-2 audit.
 
-## What Is An SOC 2?
+## What Is SOC 2?
 
 SOC 2 is a security framework that specifies how organizations should protect customer data from unauthorized access, security incidents, and other vulnerabilities.  The [American Institute of Certified Public Accountants (AICPA)](https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022) developed SOC 2 around five Trust Services Criteria: **security, availability, processing integrity, confidentiality, and privacy**.  Once your system has been appropriately hardened and ready, an independent auditor examines your security controls and writes a report saying whether those controls exist and whether they work. The report is organized around five Trust Services Criteria:
 
@@ -69,7 +68,7 @@ Nonetheless, we learned a lot during our SOC-2 preparedness, and we've factored 
 - **Caller transcripts and DTMF digits are no longer logged at `info` level.** They appear only at `debug`, which a customer can choose to turn on briefly to troubleshoot, not in normal operation. That keeps what callers say, and the digits they key in (account numbers, PINs, dates of birth), out of the systems log files.
 - **Every secret lives in AWS Systems Manager Parameter Store** as an encrypted SecureString.  No secrets appear in plaintext in any config file or anywhere on disk of any of your EC2 instances.
 - **Least-privilege instance roles:** each server tier gets only the IAM permissions its software actually requires.
-- **Fewer ports open to the internet.**. We eliminated the dependency on SNS for Scale-in notifications which allowed us to remove an open port from the security groups.  We also removed ports that were open but unused for SMPP.
+- **Fewer ports open to the internet.** We eliminated the dependency on SNS for ScaleIn notifications which allowed us to remove an open port from the security groups.  We also removed ports that were open but unused for SMPP.
 - **The instance metadata service requires IMDSv2** on every server, which blocks a common way of stealing instance credentials.
 - **No default credentials:** new installs generate a random admin API token and the portal's initial password is unique to each deployment, and you must change it the first time you sign in.
 - **SSH is closed by default.** There is no default source CIDR. You must name your admin IP or VPN range.
@@ -91,15 +90,13 @@ Here's the whole process, start to finish, for a **jambonz large** deployment on
 
 ### Step 1: Generate the Template for Your Region
 
-jambonz images are published as public AMIs. A short script copies them into your own AWS account and writes a CloudFormation template for your region. Clone the [jambonz CloudFormation repository](https://github.com/jambonz-selfhosting/cloudformation) and run:
+jambonz images are published as public AMIs. A short script copies them into your own AWS account, encrypts the underlying volumes, and then writes a CloudFormation template with the proper AMI mappings for your region. Clone the [jambonz CloudFormation repository](https://github.com/jambonz-selfhosting/cloudformation) and run:
 
 ```bash
 ./generate-cf.sh
 ```
 
-The script asks for three things: the deployment size (choose **large**), the CPU architecture (we support both AMD and ARM/Graviton), and your AWS region. It then copies the AMIs, which takes 5 to 15 minutes, and finally generates a Cloudformation file such as `jambonz-large-eu-west-3-arm64-v11.1.6.yaml`.
-
-Copying the images into your account is itself a control: the images your servers boot from live in your account and stay there, no matter what happens upstream.  (Note: the images are copied into your account on encrypted EBS volumes).
+The script asks for three things: the deployment size (choose **large**), the CPU architecture (we support both amd64 and arm64 (Graviton processors), and your AWS region. It then copies the AMIs, which takes 5 to 15 minutes, and finally generates a Cloudformation file such as `jambonz-large-eu-west-3-arm64-v11.1.6.yaml`.
 
 ### Step 2: Upload the Template
 
@@ -117,7 +114,7 @@ Give the stack a name, then fill in the three values the template requires.
 - **DNS name for the web server:** the hostname for your jambonz portal, for example `voice.example.com`.
 - **SSH source CIDR:** the one address range allowed to SSH to any server. Use your admin IP as a `/32`, or your VPN's range. There is no default on purpose.
 
-> **SOC 2:** the SSH CIDR is your logical access control at the network level (criteria CC6.1 and CC6.6). An auditor will look for administrative access limited to known sources. If you enter `0.0.0.0/0` here, you open SSH to the whole internet, and you'll have to explain why.
+> **SOC 2:** the SSH CIDR is your logical access control at the network level (criteria [CC6.1](#cc6-1) and [CC6.6](#cc6-6)). An auditor will look for administrative access limited to known sources. If you enter `0.0.0.0/0` here, you open SSH to the whole internet, and you'll have to explain why.
 
 ### Step 4: The Web Tier
 
@@ -129,7 +126,7 @@ If your domain is in Route 53, enter its **hosted zone ID**. The stack then issu
 
 The **third-party API keys** below are optional. Leave a key blank if you don't use the service. Any key you do enter is hidden in the console and stored in Parameter Store, not on the servers' disks.
 
-> **SOC 2:** the load balancer enforces TLS 1.2 or higher, with a certificate AWS renews automatically. That covers encryption in transit for the portal and the API (CC6.7), and it removes an expired certificate as a cause of an outage or a finding.
+> **SOC 2:** the load balancer enforces TLS 1.2 or higher, with a certificate AWS renews automatically. That covers encryption in transit for the portal and the API ([CC6.7](#cc6-7)), and it removes an expired certificate as a cause of an outage or a finding.
 
 ### Step 5: Compute
 
@@ -145,7 +142,7 @@ The defaults suit most deployments. Aurora Serverless v2 scales between the mini
 
 The VPC and subnet ranges only matter if this VPC must connect to your existing networks without overlapping.
 
-> **SOC 2:** the database is encrypted at rest, keeps 30 days of backups, can't be deleted by accident, and logs every connection attempt. Those settings are fixed in the template, not offered as parameters, so nobody can turn them off by mistake. They support confidentiality (C1.1), your backup and recovery evidence (A1.2), and monitoring (CC7.2).
+> **SOC 2:** the database is encrypted at rest, keeps 30 days of backups, can't be deleted by accident, and logs every connection attempt. Those settings are fixed in the template, not offered as parameters, so nobody can turn them off by mistake. They support confidentiality ([C1.1](#c1-1)), your backup and recovery evidence ([A1.2](#a1-2)), and monitoring ([CC7.2](#cc7-2)).
 
 ### Step 7: Features, Logging, Monitoring and Encryption
 
@@ -159,17 +156,17 @@ This group holds the settings an auditor will care about most:
 - **EnableOpenTelemetry:** leave it `false` unless you need distributed tracing. Traces are another copy of call details, and a copy you don't make is one you don't have to protect.
 - **EnableEBSEncryption:** below the edge of this screenshot, defaulting to `true`. Keep it. Every disk in the cluster is then encrypted at rest.
 
-> **SOC 2:** retained, centralized logs are the evidence an auditor samples to confirm you monitor your systems (CC7.2). Encrypted disks cover data at rest (CC6.1). Keep in mind that the application logs no longer contain caller transcripts at the default log level. Leave the log level at `info` in production, and turn on debug logging for an account only for as long as a support case needs it.
+> **SOC 2:** retained, centralized logs are the evidence an auditor samples to confirm you monitor your systems ([CC7.2](#cc7-2)). Encrypted disks cover data at rest ([CC6.1](#cc6-1)). Keep in mind that the application logs no longer contain caller transcripts at the default log level. Leave the log level at `info` in production, and turn on debug logging for an account only for as long as a support case needs it.
 
 ### Step 8: Tags and Permissions
 
 ![Adding tags to the stack](./cf-7-tags.png)
 
-Add tags such as `Application=jambonz` and `Environment=production`. CloudFormation applies them to the resources it creates. That gives you an asset inventory you can filter on, which is another thing auditors ask for.
+Add tags such as `Application=jambonz` and `Environment=production`. CloudFormation applies them to the resources it creates. This is an optional step, but it gives you an asset inventory you can filter on, which is another thing auditors ask for.
 
 ![Acknowledging that the stack creates IAM roles](./cf-8-capabilities.png)
 
-At the bottom of the page, acknowledge that the stack creates IAM resources. These are the least-privilege roles for each server tier. Each grants only the API calls that tier's software makes, such as reading its own parameters from Parameter Store or completing an Auto Scaling lifecycle action. Review them in IAM after the stack is up. An auditor may ask you to show that no server holds broader access than it needs (CC6.3).
+At the bottom of the page, acknowledge that the stack creates IAM resources. These are the least-privilege roles for each server tier. Each grants only the API calls that tier's software makes, such as reading its own parameters from Parameter Store or completing an Auto Scaling lifecycle action. Review them in IAM after the stack is up. An auditor may ask you to show that no server holds broader access than it needs ([CC6.3](#cc6-3)).
 
 Then click **Next**, review, and **Submit**. You can follow progress on the stack's **Events** tab.
 
@@ -203,3 +200,15 @@ That list is shorter than it would be if you were also building the voice platfo
 ## Get Started with a SOC 2-Ready Self-Hosted Voice AI Platform on AWS
 
 jambonz 11.1.6 is available now as public AMIs in 30 AWS regions, for both amd64 and arm64, and as Debian packages. Start with the [AWS self-hosting guide](https://docs.jambonz.org/self-hosting/hosting-providers/aws), or [talk to us](https://jambonz.org) about running jambonz in your environment. If you're preparing for an audit of your own, we're happy to compare notes.
+
+## SOC 2 Criteria Referenced in This Guide
+
+SOC 2 reports test controls against the AICPA's Trust Services Criteria. Every SOC 2 report covers the Security category, also called the common criteria (the "CC" codes). Availability and Confidentiality are optional categories that you choose to include. The summaries below are our own wording. The official text is in the AICPA's [2017 Trust Services Criteria (With Revised Points of Focus – 2022)](https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022), a free download that requires an AICPA account.
+
+- <a id="cc6-1"></a>**CC6.1** (Security): logical access controls, such as restricting and authenticating access and encrypting stored data, protect information assets.
+- <a id="cc6-3"></a>**CC6.3** (Security): access to data and systems is granted, changed and removed according to people's roles, following least privilege and separation of duties.
+- <a id="cc6-6"></a>**CC6.6** (Security): access controls protect the system from threats that originate outside its boundaries, for example by limiting which external sources can connect.
+- <a id="cc6-7"></a>**CC6.7** (Security): moving and transmitting information is limited to authorized users and processes, and information is protected in transit.
+- <a id="cc7-2"></a>**CC7.2** (Security): system components are monitored for anomalies that could indicate attacks, errors or failures, and those anomalies are analyzed to find security events.
+- <a id="a1-2"></a>**A1.2** (Availability): backups, recovery infrastructure and environmental protections are put in place, operated and monitored to meet availability commitments.
+- <a id="c1-1"></a>**C1.1** (Confidentiality): confidential information is identified and kept protected to meet confidentiality commitments.
