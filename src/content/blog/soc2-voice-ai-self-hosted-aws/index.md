@@ -15,12 +15,6 @@ faq:
     answer: "Not at the default log level. Starting with 11.1.6, caller transcripts and DTMF digits are logged only at debug level, and credentials for listen websockets are never written to the logs."
 ---
 
-## Key Takeaways
-
-- **Self-hosting alone doesn't make Voice AI SOC 2-ready:** Frameworks that leave secrets handling, IAM roles, encryption, and log retention to you put the audit burden on your team. jambonz 11.1.6 ships those controls built in.
-- **Your data stays in your own AWS account:** Recordings, transcripts, and call records live inside a VPC you control, covered by the security tooling you already use (CloudTrail, GuardDuty, Security Hub).
-- **Deployment is a CloudFormation template away, but some controls remain yours:** The template handles infrastructure controls like encryption, least-privilege roles, and 90-day log retention. Your policies, people's access, and account-wide logging are still yours to put in place.
-
 In the unfolding age of AI-powered cybersecurity threats, hardening your IT infrastructure is more important than ever, and [Voice AI orchestration platforms](https://jambonz.org/) present specific challenges.  By their nature, these systems are heavily connected to the outside world: 
 - They need to allow SIP, RTP and HTTP traffic in, and 
 - They need to connect out to services such as LLM and speech processing platforms.  
@@ -28,6 +22,14 @@ In the unfolding age of AI-powered cybersecurity threats, hardening your IT infr
 Furthermore, Voice AI platforms house significant amounts of private customer data that attract cyber criminals: phone numbers, personally-identifiable information, private credentials, transcripts, audio recordings, and more.
 
 At jambonz, we've spent a lot of time, energy, and resources over the past year to harden and protect our cloud systems as part of an effort to achieve SOC-2 attestation.  We've learned a lot, factored that learning into the suite of self-hosted deployment tools that we provide our customers, and this blog post describes how to [build your own self-hosted jambonz cluster on AWS](https://docs.jambonz.org/self-hosting/overview) that is also ready for a SOC-2 audit.
+
+## Key Takeaways
+
+- **Cyber criminals have upgraded their game with AI and you need to be ready.**. SOC 2 preparedness is your way to batten down your hatches before the storm arrives.
+- **Self-hosting alone doesn't make Voice AI SOC 2-ready:** Frameworks that leave secrets handling, IAM roles, encryption, and log retention to you put the audit burden on your team. jambonz 11.1.6 ships those controls built in.
+- **Your data stays in your own AWS account:** Recordings, transcripts, and call records are all ring-fenced inside a VPC you control, covered by the security tooling you already use (CloudTrail, GuardDuty, Security Hub).
+- **Deployment is a CloudFormation template away, but some controls remain yours:** The template handles infrastructure controls like encryption, least-privilege roles, and 90-day log retention. Your policies, people's access, and account-wide logging are still yours to put in place.
+
 
 ## What Is SOC 2?
 
