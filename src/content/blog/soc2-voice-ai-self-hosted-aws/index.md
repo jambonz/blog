@@ -25,7 +25,7 @@ At jambonz, we've spent a lot of time, energy, and resources over the past year 
 
 ## Key Takeaways
 
-- **Cyber criminals have upgraded their game with AI and you need to be ready.**. SOC 2 preparedness is your way to batten down your hatches before the storm arrives.
+- **Cyber criminals have upgraded their game with AI and you need to be ready.** SOC 2 preparedness is your way to batten down your hatches before the storm arrives.
 - **Self-hosting alone doesn't make Voice AI SOC 2-ready:** Frameworks that leave secrets handling, IAM roles, encryption, and log retention to you put the audit burden on your team. jambonz 11.1.6 ships those controls built in.
 - **Your data stays in your own AWS account:** Recordings, transcripts, and call records are all ring-fenced inside a VPC you control, covered by the security tooling you already use (CloudTrail, GuardDuty, Security Hub).
 - **Deployment is a CloudFormation template away, but some controls remain yours:** The template handles infrastructure controls like encryption, least-privilege roles, and 90-day log retention. Your policies, people's access, and account-wide logging are still yours to put in place.
@@ -201,7 +201,7 @@ That list is shorter than it would be if you were also building the voice platfo
 
 ## Get Started with a SOC 2-Ready Self-Hosted Voice AI Platform on AWS
 
-jambonz 11.1.6 is available now as public AMIs in 30 AWS regions, for both amd64 and arm64, and as Debian packages. Start with the [AWS self-hosting guide](https://docs.jambonz.org/self-hosting/hosting-providers/aws), or [talk to us](https://jambonz.org) about running jambonz in your environment. If you're preparing for an audit of your own, we're happy to compare notes.
+jambonz 11.1.6 is available now as public AMIs in 30 AWS regions, for both amd64 and arm64, and as Debian packages. Start with the [AWS self-hosting guide](https://docs.jambonz.org/self-hosting/hosting-providers/aws), or [contact us](mailto:support@jambonz.org?subject=Questions%20about%20SOC-2) about running jambonz in your environment. If you're preparing for an audit of your own, we're happy to compare notes.
 
 ## SOC 2 Criteria Referenced in This Guide
 
