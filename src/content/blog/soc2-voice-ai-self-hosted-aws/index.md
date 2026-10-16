@@ -59,7 +59,7 @@ Self-hosting by itself isn’t enough, though. Developer frameworks such as Live
 
 We run jambonz ourselves as a hosted service, jambonz.cloud. Going through SOC 2 readiness on our own infrastructure taught us a lot that we have now factored into our self-hosted deployment scripts.
 
-We were in decent shape to start with because we have always focused on security and privacy: our customers span the globe and often have have chosen to self-host for security and data residency requirements as well as latency.
+We were in decent shape to start with because we have always focused on security and privacy: our customers span the globe and often choose to self-host for security and data residency requirements as well as latency.
 
 For example, we designed our call recording feature such that we never store the call audio on any of our systems; instead we stream it to the customer's own cloud storage, specifically for privacy reasons. Additionally, we've always encrypted private credentials such as access tokens or api keys with the latest crypto techniques - and then stored the encrypted hashes in a database that itself is encrypted. And so on.
 
