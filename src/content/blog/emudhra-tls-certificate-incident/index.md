@@ -7,7 +7,7 @@ tags: ["security", "tls", "certificates", "self-hosting", "voice-ai"]
 draft: true
 faq:
   - question: "Is my jambonz platform vulnerable to the eMudhra certificate issue?"
-    answer: "Server-to-server platforms like jambonz are a lower risk than end-user apps and browsers, because exploiting the flaw also requires an attacker to redirect your traffic to their server, usually through DNS or network compromise. But jambonz does make outbound TLS connections, so there are surfaces worth patching: webhooks and websockets from the node applications, audio and AI connections from the media server, SIP TLS on the SBC, and recording uploads."
+    answer: "Server-to-server platforms like jambonz are a lower risk than end-user apps and browsers, because exploiting the flaw also requires an attacker to redirect your traffic to their server, usually through DNS or network compromise. But jambonz does make outbound TLS connections, so there are surfaces worth patching: webhooks and websockets from the node applications, audio and AI connections from the media server, and recording uploads."
   - question: "How do I fix the eMudhra certificate issue on jambonz?"
     answer: "There is no single trust store on a server, so there are a few places to patch. Upgrade Node.js to v22.23.4, v24.22.1 or v26.12.1 (or later), which removes the affected certificates from Node's built-in store. Update the system ca-certificates package to 20250419~deb12u2 or later on Debian 12, which covers the media server and recording uploads. New server images built from the updated packer scripts pull in the fixes automatically."
   - question: "Does setting NODE_USE_SYSTEM_CA fix Node.js?"
@@ -34,8 +34,7 @@ a self-hosted jambonz deployment.
   Wi-Fi network does to phones and laptops. jambonz talks server-to-server, which
   raises that bar.
 - **jambonz still has TLS surfaces worth patching.** Webhooks, websockets, media
-  connections, SIP over TLS and recording uploads all make outbound TLS
-  connections.
+  connections and recording uploads all make outbound TLS connections.
 - **The fix is to remove the affected certificates from your trust stores.**
   There is no single trust store per host, so this means upgrading Node.js *and*
   the system `ca-certificates` package.
@@ -43,7 +42,7 @@ a self-hosted jambonz deployment.
 ## What happened
 
 TLS — the padlock in your browser, and the encryption behind HTTPS, secure
-websockets and SIP over TLS — depends on a chain of trust. Your device trusts a
+websockets — depends on a chain of trust. Your device trusts a
 small set of root certificate authorities, those roots vouch for intermediate
 certificates, and the intermediates sign the certificates presented by the
 servers you connect to.
@@ -84,7 +83,6 @@ which validates certificates using a different trust store:
   websocket connections to your clients over TLS.
 - **The media server** connects audio to listen websockets over TLS, and
   connects out to TTS, STT and LLM providers.
-- **The SBC** connects to carriers using SIP over TLS.
 - **Recording upload** sends recording files to object storage over HTTPS/TLS.
 
 Because these use different trust stores, there is no single place to apply the
@@ -146,13 +144,6 @@ cat /etc/apt/apt.conf.d/20auto-upgrades
 
 If automatic updates are not enabled, update the package manually.
 
-### The SBC
-
-The current risk picture for SIP over TLS on the SBC is different, and we're
-treating the underlying behaviour there as a separate piece of work. If you have
-questions about SIP TLS in your deployment, get in touch and we'll walk you
-through your options.
-
 ## What you should do
 
 1. **Upgrade Node.js** on your jambonz servers to v22.23.4, v24.22.1 or
@@ -162,6 +153,7 @@ through your options.
 3. **Rebuild from current images** where you can — fresh builds pick up both
    fixes automatically.
 
-If you run on **jambonz.cloud**, these fixes are already in hand. If you
-self-host and have a support contract with us, reach out — we're happy to help
-you work through the patching and confirm your platform is covered.
+If you run on **jambonz.cloud**, these fixes have already been applied — there's
+nothing you need to do. If you self-host and have a support contract with us,
+reach out — we're happy to help you work through the patching and confirm your
+platform is covered.
