@@ -1,7 +1,7 @@
 ---
-title: "jambonz Supports OpenAI's GPT Live for Full-Duplex Voice Agents"
+title: "How to Connect OpenAI GPT Live (gpt-live-1) to Phone Calls"
 date: 2026-08-05
-description: "jambonz now supports OpenAI's GPT Live, a full-duplex speech-to-speech model. Connect a phone number and start from working code today."
+description: "Put OpenAI's GPT Live (gpt-live-1), a full-duplex speech-to-speech model, on real phone calls over SIP with jambonz, starting from working code."
 author: "Dave Horton"
 tags: ["voice-ai", "openai", "gpt-live", "s2s", "speech-to-speech", "llm"]
 coverImage: "./cover.png"

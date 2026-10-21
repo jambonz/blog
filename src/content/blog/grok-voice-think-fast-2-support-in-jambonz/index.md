@@ -1,5 +1,5 @@
 ---
-title: "jambonz Adds Speech-to-Speech Support for xAI's Grok Voice Think Fast 2.0"
+title: "How to Connect xAI Grok Voice Think Fast 2.0 to Phone Calls over SIP"
 date: 2026-08-03
 description: "xAI's Grok Voice Think Fast 2.0 now works with jambonz as a native speech-to-speech vendor. Connect phone calls with one verb and a reasoning-effort dial."
 author: "Dave Horton"

@@ -1,5 +1,5 @@
 ---
-title: "jambonz Adds Speech-to-Speech Support for Alibaba's Qwen Omni-Realtime"
+title: "How to Connect Qwen Omni-Realtime to Phone Calls over SIP"
 date: 2026-07-20
 description: "Connect phone calls to Qwen-Audio-3.0-Realtime with a single verb: full-duplex voice AI with semantic turn detection, streaming transcripts, and sub-second response latency."
 author: "Dave Horton"
