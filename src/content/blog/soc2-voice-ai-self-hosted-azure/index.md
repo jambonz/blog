@@ -10,7 +10,7 @@ faq:
   - question: "Does deploying jambonz on Azure with these Terraform modules make my company SOC 2 compliant?"
     answer: "No. SOC 2 is a report on your organization's controls, and no software can produce it for you. The 11.1.6 Azure modules take care of infrastructure controls an auditor will test on your voice platform, such as secrets handling, least-privilege access, network restrictions and log retention. Your identity and access management, your subscription-wide logging, your change management and your written policies are still yours."
   - question: "Where does call data live when I self-host jambonz on Azure?"
-    answer: "In your own Azure subscription, in a resource group and virtual network you control. Recordings, call records, logs and secrets stay under your Entra ID access policies and your Azure Activity Log."
+    answer: "In your own Azure subscription, in a resource group and virtual network you control. Recordings, call records, logs and secrets stay under your Microsoft Entra ID (formerly Azure Active Directory) access policies and your Azure Activity Log."
   - question: "Which Azure deployment sizes include the SOC 2 hardening?"
     answer: "All three Terraform modules (mini, medium and large) close SSH by default, keep secrets out of custom data and send logs to Log Analytics with a retention period. Medium and large also spread every tier across availability zones and add per-role network security groups, a private Redis endpoint and MySQL connection auditing."
 ---
