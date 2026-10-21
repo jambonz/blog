@@ -5,7 +5,6 @@ date: 2026-10-21
 description: "A 2026 guide: jambonz 11.1.6 brings the SOC 2 hardening from our AWS templates to Google Cloud: secrets out of instance metadata, a least-privilege service account, per-role firewall rules, audited Cloud SQL, Redis AUTH and zone redundancy."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "gcp", "google-cloud", "terraform", "voice-ai"]
-draft: true
 faq:
   - question: "Does deploying jambonz on Google Cloud with these Terraform modules make my company SOC 2 compliant?"
     answer: "No. SOC 2 is a report on your organization's controls, and no software can produce it for you. The 11.1.6 GCP modules take care of infrastructure controls an auditor will test on your voice platform, such as secrets handling, least-privilege access, network restrictions and log retention. Your identity and access management, your organization-wide audit logging, your change management and your written policies are still yours."
