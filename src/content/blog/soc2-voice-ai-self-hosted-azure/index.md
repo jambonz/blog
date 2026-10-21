@@ -110,7 +110,7 @@ The images are published in an Azure community gallery in 30 regions (amd64) and
 
 These controls sit at the subscription or company level, and an auditor will ask about them too:
 
-- **Human access through Entra ID**, with MFA, and ideally Privileged Identity Management for administrative roles.
+- **Human access through Microsoft Entra ID** (formerly Azure Active Directory), with MFA, and ideally Privileged Identity Management for administrative roles.
 - **The Azure Activity Log**, exported to a workspace or storage account you retain, so every change in the subscription is recorded.
 - **Microsoft Defender for Cloud and Azure Policy**, if they are part of your security program.
 - **Change management:** how updates to the deployment are reviewed and approved.
