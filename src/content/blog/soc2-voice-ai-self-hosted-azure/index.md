@@ -5,7 +5,6 @@ date: 2026-10-21
 description: "A 2026 guide: jambonz 11.1.6 brings the SOC 2 hardening from our AWS templates to Azure: no secrets in custom data, least-privilege identities, per-role network rules, private Redis, audited MySQL and zone redundancy."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "azure", "terraform", "voice-ai"]
-draft: true
 faq:
   - question: "Does deploying jambonz on Azure with these Terraform modules make my company SOC 2 compliant?"
     answer: "No. SOC 2 is a report on your organization's controls, and no software can produce it for you. The 11.1.6 Azure modules take care of infrastructure controls an auditor will test on your voice platform, such as secrets handling, least-privilege access, network restrictions and log retention. Your identity and access management, your subscription-wide logging, your change management and your written policies are still yours."
