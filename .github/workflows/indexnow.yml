@@ -1,0 +1,74 @@
+# Tell search engines (Bing, and the others that share IndexNow) about new,
+# changed and deleted posts as soon as they are live.
+#
+# Runs when Vercel reports a successful Production deployment, and submits the
+# posts that the deployed commit changed (drafts are skipped; deleted posts are
+# submitted so they drop out of the index), plus the blog index. Run it by hand
+# to submit every URL in the blog sitemap.
+#
+# The key is public by design: it is served at https://jambonz.org/blog/<key>.txt
+# from public/, and because it lives under /blog/ it only covers /blog/ URLs.
+
+name: IndexNow
+
+on:
+  deployment_status:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.deployment_status.state == 'success' &&
+       github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha || github.sha }}
+          fetch-depth: 2
+
+      - name: Submit URLs to IndexNow
+        env:
+          SHA: ${{ github.event.deployment.sha || github.sha }}
+          SUBMIT_ALL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          SITE=https://jambonz.org
+          KEY=$(ls public | grep -E '^[0-9a-f]{32}\.txt$' | head -1 | sed 's/\.txt$//')
+          [ -n "$KEY" ] || { echo "no IndexNow key file in public/"; exit 1; }
+
+          if [ "$SUBMIT_ALL" = "true" ]; then
+            URLS=$(curl -sf "$SITE/blog/sitemap-index.xml" | grep -oE "$SITE/blog/sitemap-[0-9]+\.xml" |
+              xargs -n1 curl -sf | grep -oE '<loc>[^<]+</loc>' | sed -E 's#</?loc>##g')
+          else
+            URLS=""
+            for slug in $(git diff --name-only "$SHA^1" "$SHA" -- src/content/blog/ |
+                          cut -d/ -f4 | sort -u); do
+              post="src/content/blog/$slug/index.md"
+              if [ -f "$post" ] && grep -qE '^draft:[[:space:]]*true' "$post"; then
+                echo "skipping draft: $slug"
+                continue
+              fi
+              URLS="$URLS $SITE/blog/$slug"
+            done
+            [ -n "$URLS" ] && URLS="$URLS $SITE/blog"
+          fi
+
+          if [ -z "${URLS// /}" ]; then
+            echo "no published posts changed"
+            exit 0
+          fi
+          echo "$URLS" | tr ' ' '\n' | sed '/^$/d'
+
+          BODY=$(echo "$URLS" | tr ' ' '\n' | sed '/^$/d' | jq -R . | jq -s \
+            --arg key "$KEY" --arg loc "$SITE/blog/$KEY.txt" \
+            '{host: "jambonz.org", key: $key, keyLocation: $loc, urlList: .}')
+          STATUS=$(curl -s -o /tmp/indexnow.out -w '%{http_code}' \
+            -H 'Content-Type: application/json; charset=utf-8' \
+            -d "$BODY" https://api.indexnow.org/indexnow)
+          echo "IndexNow responded $STATUS"; cat /tmp/indexnow.out || true
+          case "$STATUS" in 200|202) ;; *) exit 1 ;; esac
