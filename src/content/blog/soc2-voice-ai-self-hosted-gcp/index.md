@@ -92,7 +92,7 @@ We deployed every module on the 11.1.6 images and ran our release test suite aga
 We'd rather tell you now than have your auditor find it:
 
 - **Cloud SQL still accepts unencrypted connections.** That traffic stays on a private connection inside your VPC, and we will require TLS once we have confirmed every jambonz component works with it.
-- **Redis traffic is not encrypted.** It is password-protected and stays inside your VPC; TLS will follow once every component supports it.
+- **Redis traffic is not encrypted.** Redis holds short-lived call state and session data, stays inside your VPC, and requires a password; TLS will follow once every component supports it.
 - **Terraform state contains every secret.** Keep it in an encrypted remote backend, with access restricted to the people who run deployments.
 - **The web and monitoring servers are single VMs.** They are not zone-redundant.
 - **The Ops Agent installs shortly after a new host boots,** so the first moments of that host's logs may be missing from Cloud Logging. This happens before the host takes calls.
