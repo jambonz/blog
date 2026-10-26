@@ -1,10 +1,13 @@
 ---
-title: "Using jambonz for Retell custom telephony"
+title: "Retell AI Custom Telephony over SIP with jambonz"
 date: 2024-10-30
+updatedDate: 2026-10-21
 description: "Step-by-step: deploy jambonz as the custom telephony layer for Retell AI, covering both elastic SIP trunking and dial-to-SIP-endpoint, plus outbound calls."
 author: "Dave Horton"
 tags: ["retell", "voice-ai", "byoc", "sip", "tutorial"]
 ---
+
+> **Note:** this is now our only Retell guide. An earlier post connected jambonz to Retell through Retell's Audio WebSocket, which Retell has since [deprecated](https://docs.retellai.com/api-references/audio-websocket) in favor of SIP-based custom telephony, the approach described here.
 
 ## Overview
 
