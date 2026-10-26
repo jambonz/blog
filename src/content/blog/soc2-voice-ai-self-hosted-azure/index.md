@@ -1,7 +1,7 @@
 ---
 title: "SOC 2 Hardening for Self-Hosted Voice AI on Azure: A 2026 Guide"
 subtitle: "What changed in the jambonz 11.1.6 Terraform modules for Azure, and why each change matters to an auditor"
-date: 2026-10-21
+date: 2026-10-26
 description: "A 2026 guide: jambonz 11.1.6 brings the SOC 2 hardening from our AWS templates to Azure: no secrets in custom data, least-privilege identities, per-role network rules, private Redis, audited MySQL and zone redundancy."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "azure", "terraform", "voice-ai"]

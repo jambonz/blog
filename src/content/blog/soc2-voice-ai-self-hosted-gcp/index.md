@@ -1,7 +1,7 @@
 ---
 title: "SOC 2 Hardening for Self-Hosted Voice AI on Google Cloud: A 2026 Guide"
 subtitle: "What changed in the jambonz 11.1.6 Terraform modules for GCP, and why each change matters to an auditor"
-date: 2026-10-21
+date: 2026-10-26
 description: "A 2026 guide: jambonz 11.1.6 brings the SOC 2 hardening from our AWS templates to Google Cloud: secrets out of instance metadata, a least-privilege service account, per-role firewall rules, audited Cloud SQL, Redis AUTH and zone redundancy."
 author: "Dave Horton"
 tags: ["soc2", "security", "compliance", "self-hosting", "gcp", "google-cloud", "terraform", "voice-ai"]
