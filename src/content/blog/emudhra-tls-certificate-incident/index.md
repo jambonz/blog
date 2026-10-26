@@ -1,6 +1,6 @@
 ---
 title: "The eMudhra Certificate Incident: What It Means for Your jambonz Platform"
-date: 2026-10-21
+date: 2026-10-26
 description: "A set of intermediate certificates used by the certificate authority eMudhra can no longer be trusted. Here's how it affects self-hosted jambonz and exactly what to patch."
 author: "Sam Machin"
 tags: ["security", "tls", "certificates", "self-hosting", "voice-ai"]
