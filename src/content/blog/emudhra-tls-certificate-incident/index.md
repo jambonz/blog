@@ -4,7 +4,6 @@ date: 2026-10-21
 description: "A set of intermediate certificates used by the certificate authority eMudhra can no longer be trusted. Here's how it affects self-hosted jambonz and exactly what to patch."
 author: "Sam Machin"
 tags: ["security", "tls", "certificates", "self-hosting", "voice-ai"]
-draft: true
 faq:
   - question: "Is my jambonz platform vulnerable to the eMudhra certificate issue?"
     answer: "Server-to-server platforms like jambonz are a lower risk than end-user apps and browsers, because exploiting the flaw also requires an attacker to redirect your traffic to their server, usually through DNS or network compromise. But jambonz does make outbound TLS connections, so there are surfaces worth patching: webhooks and websockets from the node applications, audio and AI connections from the media server, and recording uploads."
