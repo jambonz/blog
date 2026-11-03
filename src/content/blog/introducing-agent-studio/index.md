@@ -54,8 +54,7 @@ Anyone can sign up at **[studio.jambonz.org](https://studio.jambonz.org/sign-up)
 self-hosted jambonz account. It's a preview, so expect some rough edges and changes as we go, and please tell us what
 you run into.
 
-<!-- TODO before publishing: confirm a line for readers without a jambonz account, e.g.
-"No jambonz account yet? Start a free trial at jambonz.cloud." -->
+No jambonz account yet? Start a free trial at [jambonz.cloud](https://jambonz.cloud).
 
 ## What's next
 
