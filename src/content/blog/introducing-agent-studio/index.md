@@ -1,44 +1,59 @@
 ---
-title: "Introducing Agent Studio: build voice AI agents on jambonz"
+title: "Introducing Agent Studio: one framework for voice AI agents"
 date: 2026-11-04
-description: "Agent Studio is now in preview: build a voice AI agent with the speech and model vendors you choose, test it in the browser, and put it on a real phone number."
+description: "Agent Studio, now in preview, brings cascaded pipelines, speech-to-speech models, hosted agents and your own code into one framework for building voice agents on jambonz."
 author: "Dave Horton"
-tags: ["agent-studio", "voice-ai", "agent", "llm", "turn-detection"]
+tags: ["agent-studio", "voice-ai", "agent", "speech-to-speech", "llm"]
 ogImage: "og-agent-studio.jpg"
 ---
 
-Today we're launching **Agent Studio** in preview. It's a builder for voice AI agents that runs on your own jambonz
-account, on jambonz.cloud or self-hosted.
+Voice AI has split into four worlds. There are cascaded pipelines, where speech-to-text, a language model and a
+voice are chained together. There are speech-to-speech models that hear and speak in one step. There are hosted
+agent platforms. And there is your own code. Each comes with its own tools, its own telephony and its own way of
+finding out what went wrong.
 
-Agent Studio is built to make one thing fast: going from an idea to an agent that answers a real phone number,
-with the speech and language vendors you choose. In the video below I build a receptionist for a fictional dental
-practice from scratch. I give it the practice's FAQ, test it from the browser, change its voice, and put it on a
-phone number. Then I call it from my phone and ask to speak to a person.
+Today we're launching **Agent Studio** in preview. It brings all four into one framework, running on your own
+jambonz account, on jambonz.cloud or self-hosted.
 
-<iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/iSDD9UVEJ0U" title="Introducing Agent Studio: build a voice AI agent on jambonz" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+## Four engines, one way of working
 
-## What's different
+Every agent in Agent Studio picks an engine:
 
-**You pick every vendor.** A pipeline agent has three parts: speech-to-text, the language model and the voice.
-Each one can be any vendor jambonz supports, with your own keys. So you choose for latency, quality or cost, one
-piece at a time, and change your mind later without rebuilding the agent.
+- **Cascaded pipeline:** speech-to-text, a language model and a voice, each from any vendor jambonz supports, with
+  your own keys.
+- **Speech-to-speech:** a single model that listens and speaks.
+- **Hosted:** an agent you already run on a platform such as Dialogflow or ElevenLabs.
+- **Custom harness:** your own code does the thinking.
+
+Everything around the engine is shared. Phone numbers, tools, transfers to a person and call history work the
+same way whichever engine is behind the agent, and every call keeps its transcript, its timing and
+a full trace. So you can change engines as the models change without rebuilding your telephony, your tooling or
+the way you debug. And when you want full control, you can export any agent as a Node.js application and run it on
+jambonz yourself.
+
+## See it in action
+
+In the video I build a receptionist for a fictional dental practice from scratch, using the cascaded pipeline. I
+give it the practice's FAQ, test it from the browser, change its voice, and put it on a phone number. Then I call it
+from my phone and ask to speak to a person. At the end there's a quick look at the other engines.
+
+<iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/iSDD9UVEJ0U" title="Introducing Agent Studio: one framework for voice AI agents" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+A few things the video shows along the way:
+
+**You pick every vendor.** In a pipeline agent you choose speech-to-text, the model and the voice one piece at a
+time, for latency, quality or cost, and change your mind later without rebuilding the agent.
 
 **Turn-taking is your choice too.** Some speech-to-text models, such as Deepgram Flux, detect the end of a turn
 themselves. Or you can use Krisp's turn model, which listens to how the caller speaks, not just for a pause, and
 works with any speech-to-text vendor.
 
-**Every call can be inspected.** Each call, test or real, keeps its transcript, its timing and a full trace. When
-something goes wrong, you can see what happened instead of guessing.
+**Every call can be inspected.** When something goes wrong, the call's trace shows what happened, down to which
+knowledge-base search ran and how long each step took, so you don't have to guess.
 
 **Changes are safe to ship.** Prompts are built from blocks, and guardrails can come from a shared library, so one
 fix reaches every agent that uses it. Every published version is kept, so you can compare versions, roll back, or
 split live calls between two versions to see which one does better.
-
-**Four engines, one way of working.** Besides the cascaded pipeline, an agent can use a speech-to-speech model, a
-hosted agent such as Dialogflow or ElevenLabs, or your own code. Phone numbers, tools, transfers and call history
-work the same for all of them.
-
-**No lock-in.** You can export any agent as a Node.js application and run it on jambonz yourself.
 
 ## It runs on jambonz
 
@@ -59,4 +74,4 @@ No jambonz account yet? Start a free trial at [jambonz.cloud](https://jambonz.cl
 
 Over the coming weeks I'll go deeper on each engine, starting with building a production pipeline agent.
 
-<!-- TODO before publishing: once the video is locked, add the transcript here in a <details> block. -->
+<!-- TODO: once the video is locked, add the transcript here in a <details> block. -->
