@@ -15,7 +15,7 @@ with the speech and language vendors you choose. In the video below I build a re
 practice from scratch. I give it the practice's FAQ, test it from the browser, change its voice, and put it on a
 phone number. Then I call it from my phone and ask to speak to a person.
 
-<!-- TODO before publishing: replace with the YouTube embed iframe (see voice-agent-handoff/index.md for the format). -->
+<iframe width="560" height="315" src="https://www.youtube.com/embed/iSDD9UVEJ0U" title="Introducing Agent Studio: build a voice AI agent on jambonz" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ## What's different
 
