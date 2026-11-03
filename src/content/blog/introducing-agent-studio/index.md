@@ -1,6 +1,6 @@
 ---
 title: "Introducing Agent Studio: build voice AI agents on jambonz"
-date: 2026-11-03
+date: 2026-11-04
 description: "Agent Studio is now in preview: build a voice AI agent with the speech and model vendors you choose, test it in the browser, and put it on a real phone number."
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "agent", "llm", "turn-detection"]
