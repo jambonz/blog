@@ -4,6 +4,7 @@ date: 2026-11-03
 description: "Agent Studio is now in preview: build a voice AI agent with the speech and model vendors you choose, test it in the browser, and put it on a real phone number."
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "agent", "llm", "turn-detection"]
+ogImage: "og-agent-studio.jpg"
 draft: true
 ---
 
