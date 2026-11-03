@@ -5,7 +5,6 @@ description: "Agent Studio is now in preview: build a voice AI agent with the sp
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "agent", "llm", "turn-detection"]
 ogImage: "og-agent-studio.jpg"
-draft: true
 ---
 
 Today we're launching **Agent Studio** in preview. It's a builder for voice AI agents that runs on your own jambonz
