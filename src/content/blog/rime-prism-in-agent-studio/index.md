@@ -23,7 +23,7 @@ faq:
 ---
 
 [Rime](https://rime.ai) has built its name on text-to-speech voices that sound genuinely human. With
-[Prism](https://www.rime.ai/prism), they've brought that to speech-to-speech: one model that listens,
+[Prism](https://www.rime.ai/resources/prism-first-speech-to-speech-for-enterprise), they've brought that to speech-to-speech: one model that listens,
 decides when you've finished, and replies in its own voice. It's fast, and honestly, I think it's the best
 speech-to-speech model out there right now.
 
@@ -45,7 +45,7 @@ jambonz carries the call, adds the transfer and hangup tools, and records every 
 
 **It's fast, and Studio shows you exactly how fast.** Studio records the latency of every turn. On the call in the
 video, Prism started replying **355 ms** and **275 ms** after deciding I'd finished speaking. Rime measures
-[Prism](https://www.rime.ai/prism) at about 0.57 seconds end to end, end-of-turn detection included. Either way,
+Prism at about 0.57 seconds end to end, end-of-turn detection included. Either way,
 there's no awkward pause: it feels like talking to someone who's listening.
 
 **Knowledge-base search works the same way.** When a question needed the practice's FAQ, Prism searched it. The
