@@ -35,11 +35,11 @@ faq:
 ---
 
 The Voice AI world has split into four camps. 
-- Those who build cascaded voice pipelines, where speech-to-text, a language model and a
+- Those who build **cascaded voice pipelines**, where speech-to-text, a language model and a
 voice are chained together to provide a harness with maximum flexibility and choice,
-- Those who love the super low latency of speech-to-speech models that hear and speak in one step,
-- Those who prefer hosted agent platforms like Dialogflow CES or Elevenlabs, and
-- Those developers who want to craft custom Voice AI harnesses using their own code. 
+- Those who love the super low latency of **speech-to-speech** models that hear and speak in one step,
+- Those who prefer **hosted agent** platforms like Dialogflow CES or Elevenlabs, and
+- Those developers who want to craft **custom Voice AI harnesses** using their own code. 
 
 Until now, each came with its own development environment, its own tool-calling conventions, and its own way of finding out what went wrong.
 
