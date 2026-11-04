@@ -11,12 +11,12 @@ The Voice AI world has split into four camps.
 - Those who build cascaded voice pipelines, where speech-to-text, a language model and a
 voice are chained together to provide a harness with maximum flexibility and choice,
 - Those who love the super low latency of speech-to-speech models that hear and speak in one step,
-- Those who prefer hosted agent platforms like Dialogflow CES, and
+- Those who prefer hosted agent platforms like Dialogflow CES or Elevenlabs, and
 - Those developers who want to craft custom Voice AI harnesses using their own code. 
 
 Until now, each came with its own development environment, its own tool-calling conventions, and its own way of finding out what went wrong.
 
-Today we're launching **Agent Studio** in preview. It's a unified framework that brings all four architectures together in one application design and runtime environment, running on your own jambonz account, whether that be [jambonz.cloud](https://studio.jambonz.org/sign-up) or [self-hosted](https://docs.jambonz.org/self-hosting/overview).
+Today we're launching **Agent Studio** in preview. It's a unified framework that brings all four architectures together in one application design and runtime environment, running on your own jambonz account, whether that be [jambonz.cloud](https://jambonz.cloud) or [self-hosted](https://docs.jambonz.org/self-hosting/overview).
 
 ## Four engines, one way of working
 
@@ -72,6 +72,8 @@ your SIP setup.
 Anyone can sign up at **[studio.jambonz.org](https://studio.jambonz.org/sign-up)** and connect a jambonz.cloud or
 self-hosted jambonz account. It's a preview, so expect some rough edges and changes as we go, and please tell us what
 you run into.
+
+No jambonz account yet? Start a free trial at [jambonz.cloud](https://jambonz.cloud).
 
 ## What's next
 
