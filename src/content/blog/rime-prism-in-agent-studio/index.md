@@ -19,7 +19,7 @@ faq:
   - question: "Can a Prism agent use tools and a knowledge base?"
     answer: "Yes. Prism decides when to call a tool and waits for the result. In Agent Studio a knowledge base reaches the agent as a search tool, so a Prism agent answers from your documents the same way a pipeline agent does, and the call trace shows each search and how long it took."
   - question: "What do I need to run Prism on self-hosted jambonz?"
-    answer: "jambonz 11.1.11 or later with mediajam 0.5.20 or later. jambonz.cloud already runs both."
+    answer: "jambonz 11.1.11 or later. jambonz.cloud already runs it."
 ---
 
 [Rime](https://rime.ai) has built its name on text-to-speech voices that sound genuinely human. With
@@ -74,7 +74,7 @@ the end of a turn, and whether the caller can interrupt. The
 [Agent Studio docs](https://docs.jambonz.org/agent-studio/agent-types/realtime-voice-api#options) list every
 option.
 
-On self-hosted jambonz, Prism needs jambonz 11.1.11 or later with mediajam 0.5.20 or later. jambonz.cloud already
-runs both, and you can start a [free trial](https://jambonz.cloud) there.
+On self-hosted jambonz, Prism needs jambonz 11.1.11 or later. jambonz.cloud already runs it, and you can start a
+[free trial](https://jambonz.cloud) there.
 
 Thanks to the team at Rime for building Prism, and for working with us on this.
