@@ -39,6 +39,9 @@ In the video I build a receptionist for a fictional dental practice from scratch
 give it the practice's FAQ as a knowledge base, test it from the browser, change its voice, and route a phone number to it. Then I call it
 from my phone and ask to speak to a person. At the end there's a quick look at the other engines.
 
+> **Tip:** the video shows a lot of on-screen detail. For the sharpest picture, open the player's settings (⚙),
+> choose **Quality**, and pick **1080p**.
+
 <iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/iSDD9UVEJ0U" title="Introducing Agent Studio: one framework for voice AI agents" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 A few things the video shows along the way:
