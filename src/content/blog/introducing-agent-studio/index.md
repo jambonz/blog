@@ -11,7 +11,7 @@ faq:
   - question: "What is the difference between a cascaded pipeline and a speech-to-speech voice agent?"
     answer: "A cascaded pipeline chains three components: speech-to-text transcribes the caller, a language model decides what to say, and text-to-speech speaks the reply. You choose each vendor separately, which gives the most control over cost, quality and voice. A speech-to-speech model hears and speaks in one step, which usually means lower latency and more natural turn-taking, but one vendor handles the whole conversation. In Agent Studio both are engines of the same agent, so you can switch between them without rebuilding anything else."
   - question: "Which speech-to-speech models does Agent Studio support?"
-    answer: "At launch: OpenAI Realtime (gpt-realtime and gpt-realtime-mini), OpenAI GPT Live (gpt-live-1), Rime Prism, Deepgram Voice Agent and Ultravox. Each one uses a speech-to-speech credential already set up in your jambonz account."
+    answer: "At launch: OpenAI Realtime (gpt-realtime and gpt-realtime-mini), OpenAI GPT Live (gpt-live-1), Rime Prism, Deepgram Voice Agent and Ultravox. Coming soon: Gemini Live, xAI Grok Voice, Qwen Omni Realtime, AssemblyAI, Azure Voice Live, Azure OpenAI Realtime, and Amazon Nova Sonic."
   - question: "Can I put a Dialogflow CES or ElevenLabs agent on a phone number?"
     answer: "Yes. The hosted engine connects a phone number to an agent you already run in Dialogflow CES or ElevenLabs Agents. The agent is still built in the vendor's console; Agent Studio provides the telephony, transfers to a person and call history around it."
   - question: "What is a Voice AI custom harness?"
@@ -38,7 +38,7 @@ The Voice AI world has split into four camps.
 - Those who build **cascaded voice pipelines**, where speech-to-text, a language model and a
 voice are chained together to provide a harness with maximum flexibility and choice,
 - Those who love the super low latency of **speech-to-speech** models that hear and speak in one step,
-- Those who prefer **hosted agent** platforms like Dialogflow CES or Elevenlabs, and
+- Those who prefer **hosted agent platforms** like Dialogflow CES or Elevenlabs, and
 - Those developers who want to craft **custom Voice AI harnesses** using their own code. 
 
 Until now, each came with its own development environment, its own tool-calling conventions, and its own way of finding out what went wrong.
