@@ -7,13 +7,16 @@ tags: ["agent-studio", "voice-ai", "agent", "speech-to-speech", "llm"]
 ogImage: "og-agent-studio.jpg"
 ---
 
-Voice AI has split into four worlds. There are cascaded pipelines, where speech-to-text, a language model and a
-voice are chained together. There are speech-to-speech models that hear and speak in one step. There are hosted
-agent platforms. And there is your own code. Each comes with its own tools, its own telephony and its own way of
-finding out what went wrong.
+The Voice AI world has split into four capms. 
+- There are those who build cascaded voice pipelines, where speech-to-text, a language model and a
+voice are chained together to provide a harness with maximum flexibility and choice,
+- There are those who love the super low latency of speech-to-speech models that hear and speak in one step,
+- There are advocates of hosted agent platforms like Dialogflow CES, and
+- There are those who want to craft custom Voice AI harnesses from their own code. 
 
-Today we're launching **Agent Studio** in preview. It brings all four into one framework, running on your own
-jambonz account, on jambonz.cloud or self-hosted.
+Each comes with its own tools, its own telephony and its own way of finding out what went wrong.
+
+Today we're launching **Agent Studio** in preview. It's a unified framework that brings all four architectures together in one application design and runtime environment, running on your own jambonz account, whether that be jambonz.cloud or self-hosted.
 
 ## Four engines, one way of working
 
@@ -28,13 +31,12 @@ Every agent in Agent Studio picks an engine:
 Everything around the engine is shared. Phone numbers, tools, transfers to a person and call history work the
 same way whichever engine is behind the agent, and every call keeps its transcript, its timing and
 a full trace. So you can change engines as the models change without rebuilding your telephony, your tooling or
-the way you debug. And when you want full control, you can export any agent as a Node.js application and run it on
-jambonz yourself.
+the way you debug. 
 
 ## See it in action
 
 In the video I build a receptionist for a fictional dental practice from scratch, using the cascaded pipeline. I
-give it the practice's FAQ, test it from the browser, change its voice, and put it on a phone number. Then I call it
+give it the practice's FAQ as a knowledge base, test it from the browser, change its voice, and route a phone number to it. Then I call it
 from my phone and ask to speak to a person. At the end there's a quick look at the other engines.
 
 <iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/iSDD9UVEJ0U" title="Introducing Agent Studio: one framework for voice AI agents" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
@@ -68,7 +70,7 @@ Anyone can sign up at **[studio.jambonz.org](https://studio.jambonz.org/sign-up)
 self-hosted jambonz account. It's a preview, so expect some rough edges and changes as we go, and please tell us what
 you run into.
 
-No jambonz account yet? Start a free trial at [jambonz.cloud](https://jambonz.cloud).
+No jambonz account yet? Start a free trial at [jambonz.cloud](https://jambonz.cloud) or [self-host jambonz](https://docs.jambonz.org/self-hosting/overview) on your own infrastructure.
 
 ## What's next
 
