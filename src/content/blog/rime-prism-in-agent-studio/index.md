@@ -1,6 +1,6 @@
 ---
 title: "Building a voice AI agent on Rime Prism with jambonz Agent Studio"
-date: 2026-11-04
+date: 2026-11-05
 description: "Rime's Prism speech-to-speech model is now in jambonz Agent Studio. Watch a dental receptionist built on Prism, with per-turn latency, knowledge-base search and clean interruptions."
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "rime", "prism", "speech-to-speech", "s2s"]
