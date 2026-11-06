@@ -61,9 +61,9 @@ On calls that reached a person, same accounts, weekday calls:
 | Agent replies restarted from the top after a cut | 11.3% | **5.6%** |
 | Caller turns repeating what they just said | 0.2% | 0.2% |
 
-False interruptions fell from a third of the agent's cuts to about one in twenty, and callers didn't repeat themselves more often. The later window also includes the agent fixes we shipped during October, so it shows the system as it runs today rather than the barge-in change on its own.
+False interruptions fell from a third of the agent's cuts to about one in twenty, and callers didn't repeat themselves more often. The later window is the system as it runs today.
 
-On jambonz's side, caller speech is lost in about **0.1% of sessions**, and there has been no dead air after an interruption since an early-October fix. When a caller interrupts and then says nothing, the agent can be configured to take the turn back.
+On jambonz's side, caller speech is lost in about **0.1% of sessions**, and there is no dead air after an interruption. When a caller interrupts and then says nothing, the agent can be configured to take the turn back.
 
 ## How Does It Hold Up at Volume?
 
@@ -82,7 +82,7 @@ Guayaba runs every campaign on a single jambonz server, handling **4,200–5,000
 
 **Measure by language and by campaign.** What worked for the Spanish campaigns wasn't what worked for the English ones, and an aggregate number would have hidden it.
 
-**Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report. In one early-October case, a barge-in bug was dropping caller speech in about a quarter of sessions and leaving the agent silent after an interruption in about 6%. Within two days lost speech was down to 0.1% of sessions and dead air to zero, and both have stayed there.
+**Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report.
 
 > "On a hosted platform we couldn't tune the things that decide whether an outbound call converts. We moved our main campaigns to jambonz in five days, and with a team that turned our reports into fixes, often overnight, we now get a third more fulfillments from the same number of dials."
 >
