@@ -96,6 +96,6 @@ Agent Studio is a builder for voice AI agents on jambonz. You choose an engine (
 
 ## Running Outbound AI Calling at Volume?
 
-If you run outbound AI campaigns and want to own how your agent listens, detects voicemail and hands off to people, **[talk to us](https://jambonz.org/contact-us?utm_source=blog&utm_campaign=guayaba-case-study)**.
+If you run outbound AI campaigns and want to own how your agent listens, detects voicemail and hands off to people, **[talk to us](https://jambonz.org/contact-us)**.
 
 **[Download the full case study (PDF)](/blog/whitepapers/guayaba-jambonz-case-study.pdf)**, with Guayaba's methodology and weekly results.
