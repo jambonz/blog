@@ -1,7 +1,7 @@
 ---
 title: "Voice AI for Outbound Campaigns: How Guayaba Got 34% More Fulfillments per Dial on jambonz"
 date: 2026-11-06
-description: "Guayaba moved its Spanish and English outbound voice AI campaigns from a hosted voice-AI platform to voice agents built on the jambonz agent verb, and now gets 34% more fulfillments from the same number of dials."
+description: "Guayaba moved its Spanish and English outbound voice AI campaigns from a leading hosted voice-AI platform to voice agents built on the jambonz agent verb, and now gets 34% more fulfillments from the same number of dials."
 author: "Dave Horton"
 tags: ["case-study", "outbound", "voice-ai", "agent-verb", "self-hosting"]
 draft: true
@@ -30,7 +30,23 @@ Guayaba wanted to own those decisions, and to measure them on its own calls.
 
 Every campaign's voice agent is built on the jambonz [agent verb](https://docs.jambonz.org/verbs/verbs/agent). The agent verb is a complete voice AI pipeline in a single verb: speech-to-text, a language model and text-to-speech, with turn-taking, barge-in, tool calls and handoff to a person built in.
 
-On each call, Guayaba's application starts the agent verb with the campaign's prompt and tools. From there the agent verb runs the conversation: it decides when the caller has finished speaking, whether speech over the agent is a real interruption, and when to call a tool, such as transferring a qualified lead to a live agent. Guayaba picks the speech and language-model vendors for each campaign, with its own keys.
+On each call, Guayaba's application starts the agent verb with the campaign's prompt and tools. From there the agent verb runs the conversation: it decides when the caller has finished speaking, whether speech over the agent is a real interruption, and when to call a tool, such as transferring a qualified lead to a live agent.
+
+Guayaba's campaigns use two specialised models for the listening side:
+
+- **[Deepgram Flux](https://deepgram.com/flux)** for speech-to-text, in Spanish (es-419) and English. Flux also decides when the caller has finished their turn, so the agent verb uses its end-of-turn signal directly rather than waiting on a fixed silence.
+- **[Krisp](https://krisp.ai)** for barge-in. When the caller speaks while the agent is talking, Krisp's interrupt-prediction model, running inside the agent verb, scores whether it's a real attempt to take the floor or just "uh-huh", "sí" or background noise. Only a real interruption stops the agent.
+
+That's Guayaba's choice, not a requirement. Every part of an agent verb is pluggable, with your own keys:
+
+| | Options |
+| --- | --- |
+| Speech-to-text | More than 25 vendors, including Deepgram (Nova and Flux), Google, Microsoft, AWS, AssemblyAI, Speechmatics, Soniox, Gladia, ElevenLabs, Cartesia and OpenAI, plus your own |
+| Text-to-speech | More than 35 vendors, including ElevenLabs, Cartesia, Deepgram, Google, Microsoft, Rime, Inworld, Hume, Speechify, Murf, Resemble AI and Fish Audio, plus your own |
+| Language model | Anthropic, OpenAI, Google Gemini (direct or Vertex AI), AWS Bedrock, Azure OpenAI, Groq, Hugging Face, OpenRouter, or any OpenAI-compatible endpoint |
+| End of turn | Native from the recognizer (Deepgram Flux, AssemblyAI, Speechmatics and others), Krisp's turn-detection model, or silence-based |
+| Barge-in | Voice-activity detection, or Krisp interrupt prediction |
+| Voice-activity detection | Silero, or the recognizer's own speech events |
 
 Since September every campaign has run on the agent verb, with answering-machine detection tuned for campaigns that mix Spanish and English. Each change was measured on Guayaba's own calls before it went to every campaign.
 
@@ -50,7 +66,7 @@ Guayaba's methodology: all figures come from its own call log, one row per call.
 
 ## Do Callers Notice the Difference?
 
-Turn-taking is where they do. In late September Guayaba switched barge-in, the decision of whether caller speech over the agent is a real interruption, from plain voice-activity detection to an interrupt-prediction model running inside the agent verb (Krisp's). End of turn comes from the speech recognizer (Deepgram Flux) in both periods.
+Turn-taking is where they do. In late September Guayaba switched barge-in from plain voice-activity detection to Krisp interrupt prediction. End of turn came from Deepgram Flux in both periods, so the difference below is how the agent handles speech over itself.
 
 On calls that reached a person, same accounts, weekday calls:
 
