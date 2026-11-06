@@ -73,7 +73,7 @@ On jambonz's side, caller speech is lost in about **0.1% of sessions**, and ther
 
 **Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report.
 
-> "Most of the gain came from owning the behaviours a hosted platform keeps out of reach, and from a vendor that ships fixes in days."
+> "On a hosted platform we couldn't tune the things that decide whether an outbound call converts. We moved our main campaigns to jambonz in five days, and with a team that turned our reports into fixes, often overnight, we now get a third more fulfillments from the same number of dials."
 >
 > — [Name, title], Guayaba
 
