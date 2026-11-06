@@ -35,7 +35,7 @@ On each call, Guayaba's application starts the agent verb with the campaign's pr
 Guayaba's campaigns use two specialised models for the listening side:
 
 - **[Deepgram Flux](https://deepgram.com/flux)** for speech-to-text, in Spanish (es-419) and English. Flux also decides when the caller has finished their turn, so the agent verb uses its end-of-turn signal directly rather than waiting on a fixed silence.
-- **[Krisp](https://krisp.ai)** for barge-in. When the caller speaks while the agent is talking, Krisp's interrupt-prediction model, running inside the agent verb, scores whether it's a real attempt to take the floor or just "uh-huh", "sí" or background noise. Only a real interruption stops the agent.
+- **Interrupt prediction** for barge-in. When the caller speaks while the agent is talking, an AI model running inside the agent verb scores whether it's a real attempt to take the floor or just "uh-huh", "sí" or background noise. Only a real interruption stops the agent.
 
 That's Guayaba's choice, not a requirement. Every part of an agent verb is pluggable, with your own keys:
 
@@ -44,8 +44,8 @@ That's Guayaba's choice, not a requirement. Every part of an agent verb is plugg
 | Speech-to-text | More than 25 vendors, including Deepgram (Nova and Flux), Google, Microsoft, AWS, AssemblyAI, Speechmatics, Soniox, Gladia, ElevenLabs, Cartesia and OpenAI, plus your own |
 | Text-to-speech | More than 35 vendors, including ElevenLabs, Cartesia, Deepgram, Google, Microsoft, Rime, Inworld, Hume, Speechify, Murf, Resemble AI and Fish Audio, plus your own |
 | Language model | Anthropic, OpenAI, Google Gemini (direct or Vertex AI), AWS Bedrock, Azure OpenAI, Groq, Hugging Face, OpenRouter, or any OpenAI-compatible endpoint |
-| End of turn | Native from the recognizer (Deepgram Flux, AssemblyAI, Speechmatics and others), Krisp's turn-detection model, or silence-based |
-| Barge-in | Voice-activity detection, or Krisp interrupt prediction |
+| End of turn | Native from the recognizer (Deepgram Flux, AssemblyAI, Speechmatics and others), an AI turn-detection model, or silence-based |
+| Barge-in | Voice-activity detection, or AI interrupt prediction |
 | Voice-activity detection | Silero, or the recognizer's own speech events |
 
 Since September every campaign has run on the agent verb, with answering-machine detection tuned for campaigns that mix Spanish and English. Each change was measured on Guayaba's own calls before it went to every campaign.
@@ -66,7 +66,7 @@ Guayaba's methodology: all figures come from its own call log, one row per call.
 
 ## Do Callers Notice the Difference?
 
-Turn-taking is where they do. In late September Guayaba switched barge-in from plain voice-activity detection to Krisp interrupt prediction. End of turn came from Deepgram Flux in both periods, so the difference below is how the agent handles speech over itself.
+Turn-taking is where they do. In late September Guayaba switched barge-in from plain voice-activity detection to AI interrupt prediction. End of turn came from Deepgram Flux in both periods, so the difference below is how the agent handles speech over itself.
 
 On calls that reached a person, same accounts, weekday calls:
 
