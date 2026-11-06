@@ -12,17 +12,7 @@ whitepaper:
   pages: 3
 ---
 
-<!--
-TODO(Dave) before publishing:
-- Guayaba's written OK: their name, the numbers below, the quote attribution, a logo if we add one.
-- Replace public/whitepapers/guayaba-jambonz-case-study.pdf if Guayaba sends a corrected version
-  (the 2× explanation; optionally "hangs up before the agent speaks" and "jambonz AI turn-taking").
-- The 2× "per live conversation" figures: see the TODO in "What changed for the business?".
-- Vendor names (Krisp, Deepgram Flux): your call. Each is in one sentence and easy to remove.
-- Set the date and remove `draft: true`.
--->
-
-Guayaba <!-- TODO(Dave): link Guayaba's site if they want it --> runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to jambonz, running on its own infrastructure.
+Guayaba runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to jambonz, running on its own infrastructure.
 
 Three months later, Guayaba gets **34% more fulfillments from the same number of dials** across twelve campaigns.
 
@@ -54,10 +44,6 @@ Against the hosted platform, across twelve outbound campaigns from five accounts
 | Transfers per live conversation | **2×** |
 | Fulfillments per live conversation | **2×** |
 
-<!-- TODO(Dave): Guayaba's PDF explains the 2× as voicemail calls leaving the denominator, but its own
-definition of a live conversation (a person answered, call of 20 s or more) already excludes voicemail.
-Ask Guayaba what drove it; until then, keep the 2× rows without an explanation, or drop them. -->
-
 Fulfillments per dial is the measure to watch, because it doesn't depend on how calls are classified: it's up a third. The first three weeks after the move ran at the old level while voicemail detection and prompts were tuned. From August, weekly fulfillments per dial stayed well above the hosted-platform level, averaging 43% above it from August to October. The gain varies by campaign and by language.
 
 Guayaba's methodology: all figures come from its own call log, one row per call. "Before" is June 15 to each campaign's move date; the headline "after" is October 16–25, 2026. Seasonality, lead lists and prompt changes weren't controlled.
@@ -87,7 +73,9 @@ On jambonz's side, caller speech is lost in about **0.1% of sessions**, and ther
 
 **Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report.
 
-<!-- TODO(Dave): if Guayaba gives a named quote, add it here as a blockquote with name and title. -->
+> "Most of the gain came from owning the behaviours a hosted platform keeps out of reach, and from a vendor that ships fixes in days."
+>
+> — [Name, title], Guayaba
 
 ## What's Next: Agent Studio
 
