@@ -22,6 +22,8 @@ faq:
     answer: "jambonz 11.1.11 or later. jambonz.cloud already runs it."
 ---
 
+Rime Prism, Rime's speech-to-speech model, is now available in jambonz Agent Studio on jambonz.cloud and self-hosted jambonz 11.1.11+.
+
 [Rime](https://rime.ai) has built its name on text-to-speech voices that sound genuinely human. With
 [Prism](https://www.rime.ai/resources/prism-first-speech-to-speech-for-enterprise), they've brought that to speech-to-speech: one model that listens,
 decides when you've finished, and replies in its own voice. It's fast, and honestly, I think it's the best
@@ -33,34 +35,34 @@ business details, same FAQ, different engine.
 
 <iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/zwOHhYcdwWA" title="Building a Voice AI agent using Rime Prism and jambonz" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
-## What the video shows
+## What Rime Prism does in Agent Studio
 
-**Building it takes a couple of minutes.** In Agent Studio, a speech-to-speech model is one of four engines an
+**Building it takes a couple of minutes:** In Agent Studio, a speech-to-speech model is one of [four engines](https://jambonz.org/blog/four-ways-to-connect-a-phone-call-to-an-ai-agent/) an
 agent can run on. Choose **Realtime voice API**, pick **Rime Prism**, and start from the same Front desk template as
 any other agent. There's no model to choose, just a voice: Prism has four, built for conversation.
 
-**The vendor handles the hard parts.** Speech recognition, turn detection, barge-in and noise handling all happen
+**The vendor handles the hard parts:** Speech recognition, turn detection, barge-in and noise handling all happen
 inside Prism. It hears the caller's voice directly, not a transcript, and decides for itself when they've finished.
 jambonz carries the call, adds the transfer and hangup tools, and records every turn.
 
-**It's fast, and Studio shows you exactly how fast.** Studio records the latency of every turn. On the call in the
+**It's fast, and Studio shows you exactly how fast:** Studio records the latency of every turn. On the call in the
 video, Prism started replying **355 ms** and **275 ms** after deciding I'd finished speaking. Rime measures
 Prism at about 0.57 seconds end to end, end-of-turn detection included. Either way,
 there's no awkward pause: it feels like talking to someone who's listening.
 
-**Knowledge-base search works the same way.** When a question needed the practice's FAQ, Prism searched it. The
+**Knowledge-base search works the same way:** When a question needed the practice's FAQ, Prism searched it. The
 trace shows the search as a tool call, with its round trip: 697 ms on that turn.
 
-**Interruptions sound clean.** This is the detail I like most. When an agent's audio is cut off mid-word, you can
+**Interruptions sound clean:** This is the detail I like most. When an agent's audio is cut off mid-word, you can
 often hear a faint click. Prism sends jambonz a hint a fraction of a second before an interruption is confirmed, so
 we can turn the agent's voice down early and fade it out, the way a person trails off when someone cuts in. Listen
 for it in the video: there's no click, and no artifact, when the agent stops speaking.
 
-**Same agent, any engine.** The Prism agent shares everything with the pipeline agent from the launch video: the
+**Same agent, any engine:** The Prism agent shares everything with the pipeline agent from the [launch video](https://jambonz.org/blog/introducing-agent-studio/): the
 prompt, the knowledge base, the phone numbers and the call history. Pipeline, speech-to-speech, a hosted agent or
-your own code: it's one framework, and you can switch.
+your own code: it's one framework, and you can switch. Prism joins the other speech-to-speech models in jambonz, including [OpenAI GPT Live](https://jambonz.org/blog/openai-gpt-live-support-in-jambonz/), [Azure Voice Live](https://jambonz.org/blog/azure-voice-live-support-in-jambonz/) and [Qwen Omni Realtime](https://jambonz.org/blog/qwen-omni-realtime-support-in-jambonz/).
 
-## Try it yourself
+## How to set up Rime Prism in Agent Studio
 
 1. In the jambonz portal, add your Rime API key under **LLM Services → Speech-to-speech → Rime Prism**. Prism uses
    the same keys as Rime text-to-speech.
