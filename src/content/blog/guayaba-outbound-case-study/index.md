@@ -65,13 +65,24 @@ False interruptions fell from a third of the agent's cuts to about one in twenty
 
 On jambonz's side, caller speech is lost in about **0.1% of sessions**, and there has been no dead air after an interruption since an early-October fix. When a caller interrupts and then says nothing, the agent can be configured to take the turn back.
 
+## How Does It Hold Up at Volume?
+
+Guayaba runs every campaign on a single jambonz server, handling **4,200–5,000 voice agent sessions a day**. Measured from jambonz's logs, November 2–4:
+
+| | |
+| --- | ---: |
+| Server restarts | **0** |
+| Calls dropped by an LLM or WebSocket failure (Nov 2–3) | **0** |
+| Language model first token, median | **about 720 ms** |
+| Text-to-speech first audio, median | **about 150 ms** |
+
 ## What Did Guayaba Learn?
 
 **Budget for tuning, not just migration.** Moving took five days. The conversion gains came over the next three months, each change measured on real calls.
 
 **Measure by language and by campaign.** What worked for the Spanish campaigns wasn't what worked for the English ones, and an aggregate number would have hidden it.
 
-**Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report.
+**Work with the jambonz team on your data.** We analysed Guayaba's calls, proposed fixes, and upgraded their system overnight, often within a day of a report. In one early-October case, a barge-in bug was dropping caller speech in about a quarter of sessions and leaving the agent silent after an interruption in about 6%. Within two days lost speech was down to 0.1% of sessions and dead air to zero, and both have stayed there.
 
 > "On a hosted platform we couldn't tune the things that decide whether an outbound call converts. We moved our main campaigns to jambonz in five days, and with a team that turned our reports into fixes, often overnight, we now get a third more fulfillments from the same number of dials."
 >
