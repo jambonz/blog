@@ -18,7 +18,7 @@ faq:
   - question: "How many situations can an agent have?"
     answer: "Up to 10 per agent, and up to 3 active at once. When 3 are active, the model is refused if it tries to start another and told to resolve one first; a start from your server makes room by dropping the oldest situation the model started."
   - question: "Which agents can use situations?"
-    answer: "Cascaded voice pipeline agents, where jambonz runs speech-to-text, a language model and text-to-speech. Speech-to-speech agents are planned. Connected agents (Dialogflow CES, ElevenLabs Agents) and custom harnesses can't use them: their instructions and tools live outside Studio."
+    answer: "Cascaded voice pipeline agents, where jambonz runs speech-to-text, a language model and text-to-speech, on jambonz 11.1.13 or later. Speech-to-speech agents are planned. Connected agents (Dialogflow CES, ElevenLabs Agents) and custom harnesses can't use them: their instructions and tools live outside Studio."
 ---
 
 Most voice agents get one prompt at the start of a call and keep it to the end. Real calls don't work that way. A
@@ -158,8 +158,7 @@ with code for Node.js and Python.
   [Starting situations from your server](https://docs.jambonz.org/agent-studio/situations/server-control) and
   [Building a server for Studio](https://docs.jambonz.org/agent-studio/situations/building-a-server).
 
-Situations work with cascaded voice pipeline agents today, on jambonz.cloud and on self-hosted jambonz [DAVE: fill
-in the version. Situations need feature-server#325, which is on main but in no tag after 11.1.12; also confirm
-jambonz.cloud runs it]. Speech-to-speech agents are
+Situations work with cascaded voice pipeline agents today, on jambonz.cloud [DAVE: confirm jambonz.cloud runs
+11.1.13] and on self-hosted jambonz 11.1.13 or later. Speech-to-speech agents are
 next: several speech-to-speech models can take new instructions and tools mid-session, and each needs its own testing
 before we turn it on.
