@@ -59,6 +59,10 @@ for anything that must be true before the agent may act, and that only your syst
 the payment cleared, the account is eligible. It's a guarantee: until your server says so, the agent has none of the
 situation's instructions and can't call any of its tools, however the conversation goes.
 
+![The negotiation situation in the builder, set to Only your server, with record_agreement under Tools offered only while active](./situation-negotiation.png)
+*`negotiation` is set to **Only your server**. The builder shows the `actions` your tool returns to start it, and
+`record_agreement` is offered only while it is active.*
+
 ## A collections call, step by step
 
 Here is the example agent from the
@@ -97,6 +101,10 @@ couldn't: `hardship` is set to start **only once `negotiation` has started**, so
 because `hardship` offers a plan, and offering a plan to someone you haven't verified is exactly what the collections
 rules forbid.
 
+![The hardship situation in the builder, set to The agent decides, with its When it applies line, When it's resolved text, and The agent can start it set to Only once negotiation has started](./situation-hardship.png)
+*`hardship` is one the agent decides: the model reads **When it applies**, and can start it only once `negotiation` has
+started.*
+
 **The caller accepts a plan.** The agent calls `record_agreement`. The server records it and resolves the situation:
 
 ```json
@@ -109,8 +117,12 @@ confirms the plan and its reference aloud, and only then do the negotiation inst
 because it required `negotiation`.
 
 Every one of those steps is on the call's timeline: **Started negotiation · by tool verify_identity**, **Started
-hardship · by the agent**, **Resolved negotiation · by tool record_agreement**, and **Resolved hardship ·
-negotiation ended**. Each turn shows the situations active through it.
+hardship · by the agent**, **Resolved negotiation · by tool record_agreement**, and **Resolved hardship · by tool
+record_agreement · negotiation ended**. Each turn shows the situations active through it.
+
+![A test call's turns in Calls: turn 4 started negotiation by verify_identity, turn 5 started hardship while in negotiation, turn 6 resolved both](./situations-call-timeline.png)
+*The test call in Calls. In turn 6 the model also tried to resolve `hardship` itself, after the server had already ended
+it; Studio refused, because it was no longer active.*
 
 ## Telling the model to stop
 
@@ -143,6 +155,9 @@ Situations have their own section in the agent builder, between **Conversation**
 shows exactly what the model is told about the situations it can start, so there is no guessing at a hidden prompt.
 Studio checks the configuration before you publish: a situation that offers a tool the agent doesn't have, hides a
 built-in tool like hang-up, or waits on a situation that waits on it in turn won't publish.
+
+![The Situations section of the agent builder: the What the model is told card, then the negotiation, hardship and callback_request situations](./situations-builder.png)
+*The Situations section. `negotiation` is missing from what the model is told: only your server can start it.*
 
 On your server, starting a situation is one field in a tool's result. It works with any HTTP tool and with MCP tools.
 Studio signs every tool request, so your server can check that a request to start a situation really came from your
