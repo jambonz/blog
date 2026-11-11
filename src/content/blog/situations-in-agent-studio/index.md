@@ -34,7 +34,8 @@ Agent Studio now has a better answer, called **situations**.
 
 ## What a situation is
 
-A situation is something that may come up on a call. You describe it once, on the agent:
+A situation is something that may come up on a call and change your priorities, or how you want the agent to
+respond to the caller. You describe it once, on the agent:
 
 - **When it applies**: one line the model reads to decide, such as "The caller says they can't afford the payment
   plans because of a job loss, illness or similar."
