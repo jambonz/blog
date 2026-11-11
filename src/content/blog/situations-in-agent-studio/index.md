@@ -5,7 +5,6 @@ date: 2026-11-10
 description: "Situations in jambonz Agent Studio change a voice agent's instructions and tools during a call: started by the model when the conversation calls for it, or by your own server when something has to be true first."
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "agent", "llm", "tools"]
-draft: true
 faq:
   - question: "What is a situation in Agent Studio?"
     answer: "A situation is something that may come up during a call, such as a caller in financial hardship, a disputed charge or a request to be called back. You describe it once on the agent: when it applies, the instructions to follow while it is active, and tools to add or hide. During a call, when the situation starts, its instructions are added to the agent's prompt and its tool changes apply. When it is resolved, they are removed again and the agent is told what to stop doing."
