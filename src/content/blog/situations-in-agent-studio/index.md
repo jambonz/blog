@@ -173,7 +173,7 @@ with code for Node.js and Python.
   [Starting situations from your server](https://docs.jambonz.org/agent-studio/situations/server-control) and
   [Building a server for Studio](https://docs.jambonz.org/agent-studio/situations/building-a-server).
 
-Situations work with cascaded voice pipeline agents today, on jambonz.cloud [DAVE: confirm jambonz.cloud runs
-11.1.13] and on self-hosted jambonz 11.1.13 or later. Speech-to-speech agents are
+Situations work with cascaded voice pipeline agents today, on jambonz.cloud and on self-hosted
+jambonz 11.1.13 or later. Speech-to-speech agents are
 next: several speech-to-speech models can take new instructions and tools mid-session, and each needs its own testing
 before we turn it on.
