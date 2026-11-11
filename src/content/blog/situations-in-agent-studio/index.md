@@ -1,6 +1,6 @@
 ---
 title: "Situations: voice agents that change their instructions mid-call"
-subtitle: "Describe what might come up on a call once. Agent Studio adds the right instructions and tools when it does, and only your server can open the parts that must be earned."
+subtitle: "A collections call turns into a hardship call the moment the caller says they've lost their job. Situations let your agent change its instructions when that happens."
 date: 2026-11-10
 description: "Situations in jambonz Agent Studio change a voice agent's instructions and tools during a call: started by the model when the conversation calls for it, or by your own server when something has to be true first."
 author: "Dave Horton"
