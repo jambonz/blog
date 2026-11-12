@@ -70,7 +70,7 @@ Turn-taking is where they do. In late September Guayaba switched barge-in from p
 
 On calls that reached a person, same accounts, weekday calls:
 
-| | Before, Sep 22–29 | Today, Oct 20 – Nov 4 |
+| | Before, Sep 22–29 | After, Oct 20 – Nov 4 |
 | --- | ---: | ---: |
 | Agent cut off only by a backchannel or greeting ("uh-huh", "hello") | 33.4% | **5.4%** |
 | Agent turns cut off at all | 18.7% | **14.2%** |
