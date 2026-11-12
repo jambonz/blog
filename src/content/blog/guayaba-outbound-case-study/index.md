@@ -1,6 +1,6 @@
 ---
 title: "Voice AI for Outbound Campaigns: How Guayaba Got 34% More Fulfillments per Dial on jambonz"
-date: 2026-11-06
+date: 2026-11-17
 description: "Guayaba moved its Spanish and English outbound voice AI campaigns from a leading hosted voice-AI platform to voice agents built on the jambonz agent verb, and now gets 34% more fulfillments from the same number of dials."
 author: "Dave Horton"
 tags: ["case-study", "outbound", "voice-ai", "agent-verb", "self-hosting"]
@@ -102,7 +102,7 @@ Guayaba runs every campaign on a single jambonz server, handling **4,200–5,000
 
 > "On a hosted platform we couldn't tune the things that decide whether an outbound call converts. We moved our main campaigns to jambonz in five days, and with a team that turned our reports into fixes, often overnight, we now get a third more fulfillments from the same number of dials."
 >
-> — [Name, title], Guayaba
+> — Agustin Botella, Co-Founder & CTO, Guayaba AI
 
 ## What's Next: Agent Studio
 
