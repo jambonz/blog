@@ -1,10 +1,10 @@
 ---
 title: "jambonz: The Bring-Your-Own-Everything Voice AI Platform"
 date: 2026-11-17
-description: "Bring your own carrier, speech vendors, LLM and cloud. How jambonz compares with LiveKit, Vapi, Retell and Bland on STT and TTS vendor choice."
+description: "Bring your own carrier, speech vendors, LLM and cloud. How jambonz compares with LiveKit, Pipecat, Vapi, Retell, Bland, Twilio and Telnyx on STT and TTS vendor choice."
 author: "Dave Horton"
 draft: true
-tags: ["voice-ai", "stt", "tts", "speech-vendors", "livekit", "vapi", "retell", "bland"]
+tags: ["voice-ai", "stt", "tts", "speech-vendors", "livekit", "pipecat", "vapi", "retell", "bland", "twilio", "telnyx"]
 faq:
   - question: "How many speech vendors does jambonz support?"
     answer: "jambonz supports 27 speech-to-text (STT) vendors and 39 text-to-speech (TTS) vendors natively, and you can add any other vendor through its custom STT and custom TTS APIs."
@@ -30,121 +30,36 @@ This post focuses on the speech part, because that's where the differences betwe
 
 ## How Many Speech Vendors Do Voice AI Platforms Support?
 
-We counted the STT and TTS vendors supported by jambonz, LiveKit, Vapi, Retell and Bland, using each platform's own docs, API specs and source code, as of 14 November 2026.
+We counted the STT and TTS vendors supported by jambonz and seven other platforms, using each platform's own docs, API specs and source code, as of 14 November 2026.
 
 | Platform | What it is | STT vendors | TTS vendors |
 |---|---|---|---|
 | **jambonz** | Open-source voice AI platform, plus jambonz.cloud | **27** | **39** |
 | LiveKit | Open-source agent framework, plus LiveKit Cloud | 29 | 37 |
+| Pipecat | Open-source Python framework, plus Pipecat Cloud | 20 | 28 |
 | Vapi | Managed voice agent platform | 13 | 14 |
 | Retell | Managed voice agent platform | 4 | 6 |
 | Bland | Managed voice agent platform | Own engine only | Own engine only |
+| Telnyx | Managed CPaaS | 9 | 13 |
+| Twilio | Managed CPaaS | 2 | 3 |
 
 A vendor counts once per company, so Deepgram Nova and Deepgram Flux are one vendor, and Azure counts as Microsoft. We only counted vendors with a hosted, public API you can call with a key, and only streaming STT, since batch-only STT can't serve a live call. We left out inference hosts that resell other companies' models, and each platform's in-house engine on its own platform.
 
-Two things stand out. Among managed voice agent platforms, jambonz supports roughly twice as many STT vendors as Vapi and nearly three times as many TTS vendors. And LiveKit, the one platform with a comparable catalog, gets there in a very different way.
+Two things stand out. Among managed voice agent platforms, jambonz supports roughly twice as many STT vendors as Vapi and nearly three times as many TTS vendors. And LiveKit and Pipecat, the two platforms with comparable catalogs, get there in a very different way.
 
 ## Vendor by Vendor
 
-Here is every vendor we counted, and which platforms support it. Vendors supported by the most platforms are at the top.
+Here is every vendor we counted, and which platforms support it. Purple dots are jambonz, and orange dots mark vendors that other platforms support and jambonz doesn't yet.
 
-### Speech-to-text
+![Speech-to-text vendor support by platform: jambonz 27, Twilio 2, Telnyx 9, LiveKit 29, Pipecat 20, Vapi 13, Retell 4, Bland 0](./stt-vendor-matrix.png)
 
-| STT vendor | **jambonz** | LiveKit | Vapi | Retell | Bland |
-|---|:-:|:-:|:-:|:-:|:-:|
-| AssemblyAI | ● | ● | ● | ● |  |
-| Deepgram | ● | ● | ● | ● |  |
-| Microsoft | ● | ● | ● | ● |  |
-| Soniox | ● | ● | ● | ● |  |
-| Cartesia | ● | ● | ● |  |  |
-| ElevenLabs | ● | ● | ● |  |  |
-| Gladia | ● | ● | ● |  |  |
-| Google | ● | ● | ● |  |  |
-| OpenAI | ● | ● | ● |  |  |
-| Speechmatics | ● | ● | ● |  |  |
-| xAI | ● | ● | ● |  |  |
-| AWS | ● | ● |  |  |  |
-| Gnani | ● | ● |  |  |  |
-| Gradium | ● | ● |  |  |  |
-| Inworld | ● | ● |  |  |  |
-| Meta | ● | ● |  |  |  |
-| Mistral | ● | ● |  |  |  |
-| NVIDIA | ● | ● |  |  |  |
-| Reson8 |  | ● | ● |  |  |
-| Sarvam | ● | ● |  |  |  |
-| Smallest AI | ● | ● |  |  |  |
-| Zoom | ● | ● |  |  |  |
-| Fish Audio |  | ● |  |  |  |
-| Giggy | ● |  |  |  |  |
-| KugelAudio | ● |  |  |  |  |
-| Lokutor |  | ● |  |  |  |
-| Modulate | ● |  |  |  |  |
-| Nabrah |  | ● |  |  |  |
-| Naver Clova |  | ● |  |  |  |
-| Palabra |  | ● |  |  |  |
-| Paxa | ● |  |  |  |  |
-| Rime |  | ● |  |  |  |
-| RTZR |  | ● |  |  |  |
-| Saidwire | ● |  |  |  |  |
-| SoundHound | ● |  |  |  |  |
-| Talkscriber |  |  | ● |  |  |
-| **Total** | **27** | 29 | 13 | 4 | 0 |
+![Text-to-speech vendor support by platform: jambonz 39, Twilio 3, Telnyx 13, LiveKit 37, Pipecat 28, Vapi 14, Retell 6, Bland 0](./tts-vendor-matrix.png)
 
-### Text-to-speech
-
-| TTS vendor | **jambonz** | LiveKit | Vapi | Retell | Bland |
-|---|:-:|:-:|:-:|:-:|:-:|
-| Cartesia | ● | ● | ● | ● |  |
-| ElevenLabs | ● | ● | ● | ● |  |
-| Inworld | ● | ● | ● | ● |  |
-| MiniMax | ● | ● | ● | ● |  |
-| OpenAI | ● | ● | ● | ● |  |
-| Deepgram | ● | ● | ● |  |  |
-| Fish Audio | ● | ● |  | ● |  |
-| Hume | ● | ● | ● |  |  |
-| Microsoft | ● | ● | ● |  |  |
-| Neuphonic | ● | ● | ● |  |  |
-| Rime | ● | ● | ● |  |  |
-| Smallest AI | ● | ● | ● |  |  |
-| xAI | ● | ● | ● |  |  |
-| AssemblyAI | ● | ● |  |  |  |
-| Async | ● | ● |  |  |  |
-| AWS | ● | ● |  |  |  |
-| Bland | ● | ● |  |  |  |
-| CAMB.AI | ● | ● |  |  |  |
-| Gnani | ● | ● |  |  |  |
-| Google | ● | ● |  |  |  |
-| Gradium | ● | ● |  |  |  |
-| LMNT |  | ● | ● |  |  |
-| Mistral | ● | ● |  |  |  |
-| Murf | ● | ● |  |  |  |
-| NVIDIA | ● | ● |  |  |  |
-| Resemble | ● | ● |  |  |  |
-| Respeecher | ● | ● |  |  |  |
-| Sarvam | ● | ● |  |  |  |
-| Soniox | ● | ● |  |  |  |
-| Speechify | ● | ● |  |  |  |
-| Speechmatics | ● | ● |  |  |  |
-| Spitch | ● | ● |  |  |  |
-| Vakyam | ● | ● |  |  |  |
-| WellSaid | ● |  | ● |  |  |
-| Giggy | ● |  |  |  |  |
-| Kalpa |  | ● |  |  |  |
-| KugelAudio | ● |  |  |  |  |
-| Lokutor |  | ● |  |  |  |
-| NineNineSix | ● |  |  |  |  |
-| Palabra |  | ● |  |  |  |
-| Paxa | ● |  |  |  |  |
-| Phonic | ● |  |  |  |  |
-| Svara | ● |  |  |  |  |
-| Uplift AI |  | ● |  |  |  |
-| **Total** | **39** | 37 | 14 | 6 | 0 |
-
-Bland's column is empty because Bland runs only its own STT and TTS engines. Bland appears as a TTS vendor because jambonz and LiveKit both let you use its voices through Bland's API.
+Bland's column is empty because Bland runs only its own STT and TTS engines. Bland still appears as a TTS vendor because jambonz, LiveKit and Pipecat all let you use its voices through Bland's API.
 
 ## Configuration, Not Code
 
-LiveKit's vendor support comes from plugins in its Python agents framework. Each vendor is code that runs inside an agent you write, deploy and keep up to date. If a vendor's plugin changes, you update your agent.
+LiveKit's vendor support comes from plugins in its Python agents framework, and Pipecat's from services in its Python framework. Either way, each vendor is code that runs inside an agent you write, deploy and keep up to date. If a vendor's plugin changes, you update your agent.
 
 In jambonz, a speech vendor is a credential. You add it in the portal or through the REST API, and then name the vendor and voice in your application. Switching from one TTS vendor to another is a configuration change, not a code change and a redeploy.
 
@@ -159,6 +74,9 @@ That's not true everywhere:
 - **Retell** hosts all its speech vendors. You can't use your own vendor account.
 - **Bland** runs only its own STT and TTS engines, sold as part of a flat per-minute rate.
 - **Vapi** supports your own keys for most of its vendors.
+- **Twilio** bundles its speech vendors and bills for them itself.
+- **Telnyx** accepts your own key only for ElevenLabs and Azure.
+- **Pipecat** services use your own keys.
 - **LiveKit** plugins use your own keys. LiveKit Cloud's hosted inference gateway, which covers a smaller set of vendors, bills through LiveKit instead.
 
 ## When Your Vendor Isn't on the List
@@ -169,9 +87,12 @@ No platform supports every vendor, so the question is what happens when the one 
 |---|---|---|---|---|---|
 | **jambonz** | Yes, every vendor | Yes (WebSocket) | Yes (HTTP) | Yes (WebSocket) | Yes |
 | LiveKit | Yes (plugins) | Code only | Code only | Code only | Yes |
+| Pipecat | Yes | Code only | Code only | Code only | Yes |
 | Vapi | Most vendors | Yes (WebSocket) | Yes (HTTP) | No | No |
 | Retell | No | No | No | No | No |
 | Bland | No | No | No | No | Enterprise on-prem only |
+| Telnyx | ElevenLabs and Azure only | No | No | No | No |
+| Twilio | No | No | No | No | No |
 
 jambonz gives you three ways to plug in any vendor without changing jambonz itself:
 
