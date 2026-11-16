@@ -12,13 +12,16 @@ whitepaper:
   pages: 3
 ---
 
-Guayaba runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to jambonz, running on its own infrastructure.
+Guayaba runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to [jambonz](https://www.jambonz.org/), running on its own infrastructure.
 
 Three months later, Guayaba gets **34% more fulfillments from the same number of dials** across twelve campaigns.
 
+**[Download the case study (PDF)](/blog/whitepapers/guayaba-jambonz-case-study.pdf) to see Guayaba's methodology and results.**
+
+
 ## Why Did Guayaba Leave a Hosted Voice-AI Platform?
 
-The hosted platform worked. But the behaviours that decide whether an outbound call converts were hard to tune from outside: when the agent yields to the caller, how voicemail is detected, and how a qualified caller is handed to a human.
+The hosted platform worked. But the behaviours that decide whether an outbound call converts were hard to tune from outside: when the [agent](https://jambonz.org/blog/voice-agent-handoff) yields to the caller, how [voicemail](https://jambonz.org/blog/noise-isolation-for-outbound-amd) is detected, and how a qualified caller is handed to a human.
 
 Guayaba wanted to own those decisions, and to measure them on its own calls.
 
@@ -66,7 +69,7 @@ Guayaba's methodology: all figures come from its own call log, one row per call.
 
 ## Do Callers Notice the Difference?
 
-Turn-taking is where they do. In late September Guayaba switched barge-in from plain voice-activity detection to AI interrupt prediction. End of turn came from Deepgram Flux in both periods, so the difference below is how the agent handles speech over itself.
+Turn-taking is where they do. In late September Guayaba switched [barge-in](https://jambonz.org/blog/call-center-supervision-with-jambonz) from plain voice-activity detection to AI interrupt prediction. End of turn came from Deepgram Flux in both periods, so the difference below is how the agent handles speech over itself.
 
 On calls that reached a person, same accounts, weekday calls:
 
@@ -104,7 +107,7 @@ Guayaba runs every campaign on a single jambonz server, handling **4,200–5,000
 >
 > — Agustin Botella, Co-Founder & CTO, Guayaba AI
 
-## What's Next: Agent Studio
+## What's Next? Agent Studio
 
 Guayaba builds its agents in its own application, which suits a team that wants its campaign logic in its own code. For teams that would rather not write and host an application server, we've just launched [Agent Studio](/blog/introducing-agent-studio) in preview.
 
