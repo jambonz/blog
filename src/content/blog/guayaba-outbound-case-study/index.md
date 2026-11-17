@@ -4,7 +4,6 @@ date: 2026-11-17
 description: "Guayaba moved its Spanish and English outbound voice AI campaigns from a leading hosted voice-AI platform to voice agents built on the jambonz agent verb, and now gets 34% more fulfillments from the same number of dials."
 author: "Dave Horton"
 tags: ["case-study", "outbound", "voice-ai", "agent-verb", "self-hosting"]
-draft: true
 whitepaper:
   title: "Guayaba × jambonz: customer case study"
   file: "/whitepapers/guayaba-jambonz-case-study.pdf"
@@ -21,13 +20,13 @@ Three months later, Guayaba gets **34% more fulfillments from the same number of
 
 ## Why Did Guayaba Leave a Hosted Voice-AI Platform?
 
-The hosted platform worked. But the behaviours that decide whether an outbound call converts were hard to tune from outside: when the [agent](https://jambonz.org/blog/voice-agent-handoff) yields to the caller, how [voicemail](https://jambonz.org/blog/noise-isolation-for-outbound-amd) is detected, and how a qualified caller is handed to a human.
+The hosted platform worked. But the behaviours that decide whether an outbound call converts were hard to tune from outside: when the agent yields to the caller, how [voicemail](https://docs.jambonz.org/guides/features/answering-machine-detection) is detected, and how a qualified caller is [handed to a human](https://blog-bzzh469wq-jambonz.vercel.app/blog/voice-agent-handoff).
 
 Guayaba wanted to own those decisions, and to measure them on its own calls.
 
 ## How Long Did the Move Take?
 
-**Five days**, July 10–15, 2026. Guayaba runs jambonz on its own servers and keeps its campaign logic in its own application, which talks to jambonz over the [WebSocket API](https://docs.jambonz.org). jambonz runs the calls; Guayaba decides what the agent says and does.
+**Five days**, July 10–15, 2026. Guayaba runs jambonz on its own servers and keeps its campaign logic in its own application, which talks to jambonz over the [WebSocket API](https://docs.jambonz.org/sdks/node-sdk). jambonz runs the calls; Guayaba decides what the agent says and does.
 
 ## How Are Guayaba's Voice Agents Built?
 
