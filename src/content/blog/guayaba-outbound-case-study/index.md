@@ -11,7 +11,7 @@ whitepaper:
   pages: 3
 ---
 
-Guayaba runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to [jambonz](https://www.jambonz.org/), running on its own infrastructure.
+[Guayaba](https://guayaba.ai/) runs AI calling campaigns for US consumer-finance businesses, mostly for the US Hispanic market, in Spanish and English. In July 2026 it moved its main outbound campaigns from one of the leading hosted voice-AI platforms to [jambonz](https://www.jambonz.org/), running on its own infrastructure.
 
 Three months later, Guayaba gets **34% more fulfillments from the same number of dials** across twelve campaigns.
 
