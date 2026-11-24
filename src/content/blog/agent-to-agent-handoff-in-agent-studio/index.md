@@ -34,8 +34,7 @@ caller back when they need something it can't help with.
 
 ## See it on a call
 
-<!-- Replace VIDEO_ID with the YouTube id once the video is uploaded. -->
-<iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/VIDEO_ID" title="Agent handoff in Agent Studio: one call, two voice agents" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<iframe style="width: 100%; height: auto; aspect-ratio: 16 / 9;" src="https://www.youtube.com/embed/AmHq0IRZ_V0" title="Agent handoff in Agent Studio: one call, two voice agents" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 The call in the video, with two agents built in Studio, a front desk and a billing desk:
 
