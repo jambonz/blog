@@ -7,7 +7,7 @@
     { "source": "/using-jambonz-for-retell-custom-telephony", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/using-jambonz-for-retell-custom-telephony", "permanent": true },
     { "source": "/some-initial-thoughts-on-openais-realtime-api", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/some-initial-thoughts-on-openais-realtime-api", "permanent": true },
     { "source": "/microsoft-teams-direct-routing-with-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/microsoft-teams-direct-routing-with-jambonz", "permanent": true },
-    { "source": "/using-jambonz-for-telephony-integration-with-retell-ai", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/using-jambonz-for-telephony-integration-with-retell-ai", "permanent": true },
+    { "source": "/using-jambonz-for-telephony-integration-with-retell-ai", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/using-jambonz-for-retell-custom-telephony", "permanent": true },
     { "source": "/text-to-speech-latency-the-jambonz-leaderboard", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/text-to-speech-latency-the-jambonz-leaderboard", "permanent": true },
     { "source": "/improving-the-voicebot-experience", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/improving-the-voicebot-experience", "permanent": true },
     { "source": "/priority-queues-in-jambonz", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/priority-queues-in-jambonz", "permanent": true },
@@ -22,6 +22,8 @@
     { "source": "/rss.xml", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/rss.xml", "permanent": true },
     { "source": "/sitemap.xml", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog/sitemap-index.xml", "permanent": true },
     { "source": "/(.*)", "has": [{ "type": "host", "value": "blog.jambonz.org" }], "destination": "https://jambonz.org/blog", "permanent": true },
+
+    { "source": "/blog/using-jambonz-for-telephony-integration-with-retell-ai", "destination": "https://jambonz.org/blog/using-jambonz-for-retell-custom-telephony", "permanent": true },
 
     { "source": "/", "destination": "/blog/", "permanent": false }
   ]
