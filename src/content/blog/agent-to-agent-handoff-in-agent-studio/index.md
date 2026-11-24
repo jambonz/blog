@@ -1,11 +1,10 @@
 ---
 title: "Agent handoff: one call, more than one voice agent"
 subtitle: "A front desk agent hands a billing question to a billing agent, with the account number, and the caller never hears a second greeting."
-date: 2026-11-13
+date: 2026-11-23
 description: "Agent Studio can now hand a call from one voice agent to another on the same call: the next agent gets the values it asked for, doesn't greet the caller again, and can hand the caller back."
 author: "Dave Horton"
 tags: ["agent-studio", "voice-ai", "agent", "handoff", "llm"]
-draft: true
 faq:
   - question: "What is agent handoff in Agent Studio?"
     answer: "Agent handoff passes a live call from one Agent Studio agent to another in the same workspace. The caller stays on the same call. The next agent is told the handoff is done, gets the values it asked for, doesn't greet the caller again, and carries on from what the caller last said. It can hand the caller back."
